@@ -46,9 +46,12 @@ local function region_tablist()
       end
    end
    --+ tablist inside the active region
-
-   if not tablelength(tablist) == 1 then return false end
-   --+ flow control
+   
+   if tablelength(tablist) == 1 then 
+      return {}
+   end
+   --> flow control: if there is only one client in the
+   --> region, there is nothing to shuffle.
 
     return tablist
 end
@@ -62,19 +65,12 @@ local keys = gears.table.join(
       local tablist = region_tablist()
       local next_client = nil
 
-      if not tablist then return false end
-      --+ flow control
-
       for _, cc in ipairs(tablist) do
-         if (cc.window == client.focus.window) then
-            if tablist[_+1] then
-               client.focus:lower()
-               next_client = tablist[_+1]
-               next_client:emit_signal("request::activate", "mouse_enter",{raise = true})
-               break
-               --+ activate next client
-             end
-         end
+         client.focus:lower()
+         next_client = tablist[_+1]
+         next_client:emit_signal("request::activate", "mouse_enter",{raise = true})
+         break
+         --+ activate next client
       end
     end),
     --+ shortcut: shuffle down
@@ -82,9 +78,6 @@ local keys = gears.table.join(
    awful.key({modkey}, "o", function () 
       local tablist = region_tablist()
       local prev_client = nil
-
-      if not tablist then return false end
-      --+ flow control
 
       for i = #tablist, 1, -1 do
          prev_client = tablist[i]
