@@ -15,7 +15,7 @@ https://github.com/basaran/awesomewm-machina
 and call it from your `rc.lua`
 
 ```lua
-local machina = require('awesomewm-backham')
+local machina = require('awesomewm-machina')
 ```
 
 append to your keybindings, typically in your `rc.lua`
