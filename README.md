@@ -35,3 +35,9 @@ modkey + home : center as float
 modkey + pageup : move top right
 modkey + pagedown : move bottom right
 ```
+
+### Preview
+https://user-images.githubusercontent.com/30809170/121564284-48bf6d80-c9e9-11eb-982c-6abfbf1fddf1.mp4
+
+
+
