@@ -96,12 +96,14 @@ local keys = gears.table.join(
    --+ shortcut: shuffle up
 
    awful.key({modkey}, "Page_Up", function () 
-      client.focus:geometry({width=800,height=800}) awful.placement.top_right(client.focus) 
+      client.focus:geometry({width=800,height=800})
+      awful.placement.top_right(client.focus) 
    end),
     --+ shortcut: align top-right
 
    awful.key({modkey}, "Page_Down", function () 
-      client.focus:geometry({width=800,height=800}) awful.placement.bottom_right(client.focus)
+      client.focus:geometry({width=800,height=800})
+      awful.placement.bottom_right(client.focus)
    end),
    --+ shortcut: align bottom-right
 
