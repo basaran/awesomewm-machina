@@ -100,7 +100,6 @@ local keys = gears.table.join(
       client.focus:geometry({width=800,height=800})
       awful.placement.bottom_right(client.focus)
       client.focus:raise() 
-
    end),
    --+ shortcut: align bottom-right
 
@@ -121,9 +120,32 @@ local keys = gears.table.join(
    awful.key({modkey}, "Delete", function () 
       awful.placement.bottom_left(client.focus) 
       client.focus:raise() 
-
-   end)
+   end),
    --+ shortcut: align bottom-left
+
+   awful.key({modkey}, "j", function () 
+      awful.client.focus.bydirection("left", nil,true)
+      client.focus:raise()
+   end),
+   --+ shortcut: stack friendly left
+
+   awful.key({modkey}, "k", function ()
+      awful.client.focus.bydirection("down", nil,true)
+      client.focus:raise()
+   end),
+   --+ shortcut: stack friendly down
+   
+   awful.key({modkey}, "l", function ()
+      awful.client.focus.bydirection("right", nil,true)
+      client.focus:raise()
+   end),
+   --+ shortcut: stack friendly right
+
+   awful.key({modkey}, "i", function ()
+      awful.client.focus.bydirection("up", nil,true)
+      client.focus:raise()
+   end)
+   --+ shortcut: stack friendly up
 )
 
 --------------------------------------------------------------> exports -- ;
