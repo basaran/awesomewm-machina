@@ -62,6 +62,9 @@ end
 ---------------------------------------------------------> key bindings -- ;
 
 local keys = gears.table.join(
+   
+   ----------------------> SHUFFLE <----------------------
+
    awful.key({modkey}, "p", function ()
       local tablist = region_tablist()
       local next_client = nil
@@ -88,6 +91,8 @@ local keys = gears.table.join(
       end
    end),
    --+ shortcut: shuffle up
+
+   ----------------------> PLACEMENT <----------------------
 
    awful.key({modkey}, "Page_Up", function () 
       client.focus:geometry({width=800,height=800})
@@ -121,6 +126,8 @@ local keys = gears.table.join(
       client.focus:raise() 
    end),
    --+ shortcut: align bottom-left
+
+   ----------------------> NAVIGATION <----------------------
 
    awful.key({modkey}, "j", function () 
       awful.client.focus.bydirection("left", nil,true)
