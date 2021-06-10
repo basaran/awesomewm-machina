@@ -5,9 +5,9 @@ local awful = require("awful")
 local modkey = "Mod4"
 
 local function tablelength(T)
-  local count = 0
-  for _ in pairs(T) do count = count + 1 end
-  return count
+   local count = 0
+   for _ in pairs(T) do count = count + 1 end
+   return count
 end
 
 --------------------------------------------------------------> methods -- ;
@@ -59,41 +59,68 @@ end
 
 local keys = gears.table.join(
    awful.key({modkey}, "p", function ()
-        local tablist = region_tablist()
-        local next_client = nil
+      local tablist = region_tablist()
+      local next_client = nil
 
-        if not tablist then return false end
-        --+ flow control
+      if not tablist then return false end
+      --+ flow control
 
-        for _, cc in ipairs(tablist) do
-            if (cc.window == client.focus.window) then
-               if tablist[_+1] then
-                  client.focus:lower()
-                  next_client = tablist[_+1]
-                  next_client:emit_signal("request::activate", "mouse_enter",{raise = true})
-                  break
-                  --+ activate next client
-                end
-            end
-        end
+      for _, cc in ipairs(tablist) do
+         if (cc.window == client.focus.window) then
+            if tablist[_+1] then
+               client.focus:lower()
+               next_client = tablist[_+1]
+               next_client:emit_signal("request::activate", "mouse_enter",{raise = true})
+               break
+               --+ activate next client
+             end
+         end
+      end
     end),
     --+ shortcut: shuffle down
 
-    awful.key({modkey}, "o", function () 
-        local tablist = region_tablist()
-        local prev_client = nil
+   awful.key({modkey}, "o", function () 
+      local tablist = region_tablist()
+      local prev_client = nil
 
-        if not tablist then return false end
-        --+ flow control
+      if not tablist then return false end
+      --+ flow control
 
-        for i = #tablist, 1, -1 do
-            prev_client = tablist[i]
-            prev_client:emit_signal("request::activate", "mouse_enter",{raise = true})
-            break
-            --+ activate previous client
-        end
-    end)
-    --+ shortcut: shuffle down
+      for i = #tablist, 1, -1 do
+         prev_client = tablist[i]
+         prev_client:emit_signal("request::activate", "mouse_enter",{raise = true})
+         break
+         --+ activate previous client
+      end
+   end),
+   --+ shortcut: shuffle up
+
+   awful.key({ modkey,   }, "Page_Up", function () 
+      client.focus:geometry({width=800,height=800}) awful.placement.top_right(client.focus) 
+   end),
+    --+ shortcut: align top-right
+
+   awful.key({ modkey,    }, "Page_Down", function () 
+      client.focus:geometry({width=800,height=800}) awful.placement.bottom_right(client.focus)
+   end),
+   --+ shortcut: align bottom-right
+
+   awful.key({ modkey,    }, "Home", function () 
+      if not client.focus.floating then client.focus.floating = true end
+      awful.placement.centered(client.focus) 
+   end),
+   --+ shortcut: align center as float
+
+   awful.key({ modkey,    }, "Insert", function () 
+      awful.placement.top_left(client.focus) 
+   end),
+   --+ shortcut: align top-left
+
+   awful.key({ modkey,    }, "Delete", function () 
+      awful.placement.bottom_left(client.focus) 
+   end)
+   --+ shortcut: align bottom-left
+
 )
 
 --------------------------------------------------------------> exports -- ;
