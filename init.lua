@@ -113,7 +113,6 @@ local keys = gears.table.join(
    awful.key({modkey}, "Insert", function () 
       awful.placement.top_left(client.focus) 
       client.focus:raise() 
-
    end),
    --+ shortcut: align top-left
 
