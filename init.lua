@@ -90,29 +90,37 @@ local keys = gears.table.join(
 
    awful.key({modkey}, "Page_Up", function () 
       client.focus:geometry({width=800,height=800})
-      awful.placement.top_right(client.focus) 
+      awful.placement.top_right(client.focus)
+      client.focus:raise() 
    end),
     --+ shortcut: align top-right
 
    awful.key({modkey}, "Page_Down", function () 
       client.focus:geometry({width=800,height=800})
       awful.placement.bottom_right(client.focus)
+      client.focus:raise() 
+
    end),
    --+ shortcut: align bottom-right
 
    awful.key({modkey}, "Home", function () 
       if not client.focus.floating then client.focus.floating = true end
       awful.placement.centered(client.focus) 
+      client.focus:raise() 
    end),
    --+ shortcut: align center as float
 
    awful.key({modkey}, "Insert", function () 
       awful.placement.top_left(client.focus) 
+      client.focus:raise() 
+
    end),
    --+ shortcut: align top-left
 
    awful.key({modkey}, "Delete", function () 
       awful.placement.bottom_left(client.focus) 
+      client.focus:raise() 
+
    end)
    --+ shortcut: align bottom-left
 )
