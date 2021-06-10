@@ -29,11 +29,17 @@ default shortcuts are:
 ```lua
 modkey + p : next in region
 modkey + o : prev in region
+
 modkey + insert : move top left
 modkey + delete : move bottom left
 modkey + home : center as float
 modkey + pageup : move top right
 modkey + pagedown : move bottom right
+
+modkey + j : stack friendly left
+modkey + k : stack friendly down
+modkey + l : stack friendly right
+modkey + i : stack friendly up
 ```
 
 ### Preview
