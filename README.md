@@ -23,3 +23,15 @@ append to your keybindings, typically in your `rc.lua`
 ```lua
 root.keys(gears.table.join(config.globalkeys, machina.keys))
 ```
+
+default shortcuts are:
+
+```lua
+modkey + p : next in region
+modkey + o : prev in region
+modkey + insert : move top left
+modkey + delete : move bottom right
+modkey + home : center as float
+modkey + pageup : move top right
+modkey + pagedown : move bottom right
+```
