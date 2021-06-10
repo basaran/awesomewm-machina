@@ -22,7 +22,7 @@ local function region_tablist()
    local regions = awful.layout.get(focused_screen).machi_get_regions(workarea, selected_tag)
    --+ table of regions on the selected screen and tag
 
-   if not client.focus then return false end
+   if not client.focus then return {} end
    --+ flow control
 
    for i, a in ipairs(regions) do
@@ -51,7 +51,8 @@ local function region_tablist()
       return {}
    end
    --> flow control: if there is only one client in the
-   --> region, there is nothing to shuffle.
+   --> region, there is nothing to shuffle. having this here
+   --> makes it easier to avoid if nesting later.
 
     return tablist
 end
