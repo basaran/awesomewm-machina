@@ -148,6 +148,15 @@ local keys = gears.table.join(
    end),
    ----+ shortcut: stack friendly left
 
+   awful.key({modkey, "Shift"}, "j", function () 
+      if not client.focus then return false end
+
+      c = client.focus
+      c.machi.region = 1
+      naughty.notify({text=inspect(c.machi)})
+   end),
+   ----+ shortcut:
+
    awful.key({modkey}, "k", function ()
       if not client.focus then return false end
 
@@ -201,5 +210,3 @@ local module = {
 return module
 
 
--- todo: add show desktop either via viewnone or this other one
--- https://www.reddit.com/r/awesomewm/comments/nvz3cn/show_desktop_function/
