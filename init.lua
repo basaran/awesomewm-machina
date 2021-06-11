@@ -50,7 +50,7 @@ local function region_tablist()
    if tablelength(tablist) == 1 then 
       return {}
    end
-   --> flow control: if there is only one client in the
+   --+ flow control: if there is only one client in the
    --> region, there is nothing to shuffle. having this here
    --> makes it easier to avoid if nesting later.
 
@@ -77,7 +77,7 @@ local keys = gears.table.join(
          --+ activate next client
       end
     end),
-    --+ shortcut: shuffle down
+    ----+ shortcut: shuffle down
 
    awful.key({modkey}, "o", function () 
       local tablist = region_tablist()
@@ -90,68 +90,84 @@ local keys = gears.table.join(
          --+ activate previous client
       end
    end),
-   --+ shortcut: shuffle up
+   ----+ shortcut: shuffle up
 
    ----------------------> PLACEMENT <----------------------
 
    awful.key({modkey}, "Page_Up", function () 
+      if not client.focus then return false end
+
       client.focus:geometry({width=800,height=800})
       awful.placement.top_right(client.focus)
       client.focus:raise() 
    end),
-    --+ shortcut: align top-right
+    ----+ shortcut: align top-right
 
    awful.key({modkey}, "Page_Down", function () 
+      if not client.focus then return false end
+
       client.focus:geometry({width=800,height=800})
       awful.placement.bottom_right(client.focus)
       client.focus:raise() 
    end),
-   --+ shortcut: align bottom-right
+   ----+ shortcut: align bottom-right
 
    awful.key({modkey}, "Home", function () 
       if not client.focus.floating then client.focus.floating = true end
       awful.placement.centered(client.focus) 
       client.focus:raise() 
    end),
-   --+ shortcut: align center as float
+   ----+ shortcut: align center as float
 
-   awful.key({modkey}, "Insert", function () 
+   awful.key({modkey}, "Insert", function ()
+      if not client.focus then return false end
+
       awful.placement.top_left(client.focus) 
       client.focus:raise() 
    end),
-   --+ shortcut: align top-left
+   ----+ shortcut: align top-left
 
    awful.key({modkey}, "Delete", function () 
+      if not client.focus then return false end
+
       awful.placement.bottom_left(client.focus) 
       client.focus:raise() 
    end),
-   --+ shortcut: align bottom-left
+   ----+ shortcut: align bottom-left
 
    ----------------------> NAVIGATION <----------------------
 
    awful.key({modkey}, "j", function () 
+      if not client.focus then return false end
+
       awful.client.focus.bydirection("left", nil,true)
       client.focus:raise()
    end),
-   --+ shortcut: stack friendly left
+   ----+ shortcut: stack friendly left
 
    awful.key({modkey}, "k", function ()
+      if not client.focus then return false end
+
       awful.client.focus.bydirection("down", nil,true)
       client.focus:raise()
    end),
-   --+ shortcut: stack friendly down
+   ----+ shortcut: stack friendly down
    
    awful.key({modkey}, "l", function ()
+      if not client.focus then return false end
+
       awful.client.focus.bydirection("right", nil,true)
       client.focus:raise()
    end),
-   --+ shortcut: stack friendly right
+   ----+ shortcut: stack friendly right
 
    awful.key({modkey}, "i", function ()
+      if not client.focus then return false end
+
       awful.client.focus.bydirection("up", nil,true)
       client.focus:raise()
    end)
-   --+ shortcut: stack friendly up
+   ----+ shortcut: stack friendly up
 )
 
 --------------------------------------------------------------> exports -- ;
