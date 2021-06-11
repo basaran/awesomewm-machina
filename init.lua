@@ -3,12 +3,14 @@
 local gears = require("gears")
 local awful = require("awful")
 local modkey = "Mod4"
+local show_desktop = true
 
 local function tablelength(T)
    local count = 0
    for _ in pairs(T) do count = count + 1 end
    return count
 end
+
 
 --------------------------------------------------------------> methods -- ;
 
@@ -65,7 +67,20 @@ local keys = gears.table.join(
    
    ----------------------> SHUFFLE <----------------------
 
-   awful.key({modkey}, "p", function ()
+   awful.key({modkey}, "[", function () 
+      local tablist = region_tablist()
+      local prev_client = nil
+
+      for i = #tablist, 1, -1 do
+         prev_client = tablist[i]
+         prev_client:emit_signal("request::activate", "mouse_enter",{raise = true})
+         break
+         --+ activate previous client
+      end
+   end),
+   ----+ shortcut: shuffle back
+
+   awful.key({modkey}, "]", function ()
       local tablist = region_tablist()
       local next_client = nil
 
@@ -77,20 +92,8 @@ local keys = gears.table.join(
          --+ activate next client
       end
     end),
-    ----+ shortcut: shuffle down
+    ----+ shortcut: shuffle forward
 
-   awful.key({modkey}, "o", function () 
-      local tablist = region_tablist()
-      local prev_client = nil
-
-      for i = #tablist, 1, -1 do
-         prev_client = tablist[i]
-         prev_client:emit_signal("request::activate", "mouse_enter",{raise = true})
-         break
-         --+ activate previous client
-      end
-   end),
-   ----+ shortcut: shuffle up
 
    ----------------------> PLACEMENT <----------------------
 
@@ -101,7 +104,7 @@ local keys = gears.table.join(
       awful.placement.top_right(client.focus)
       client.focus:raise() 
    end),
-    ----+ shortcut: align top-right
+   ----+ shortcut: align top-right
 
    awful.key({modkey}, "Page_Down", function () 
       if not client.focus then return false end
@@ -168,6 +171,24 @@ local keys = gears.table.join(
       client.focus:raise()
    end)
    ----+ shortcut: stack friendly up
+
+   ----------------------> MISC <----------------------
+
+   -- awful.key({modkey}, "F9", function ()
+   --    if show_desktop then 
+   --       awful.tag.viewnone()
+   --       show_desktop = false
+   --       return false
+   --    end
+
+   --    if not show_desktop then
+   --       awful.tag.viewtoggle()
+   --       return false
+   --    end
+   -- end)
+   ----+ shortcut: stack friendly up
+
+
 )
 
 --------------------------------------------------------------> exports -- ;
@@ -178,3 +199,7 @@ local module = {
 }
 
 return module
+
+
+-- todo: add show desktop either via viewnone or this other one
+-- https://www.reddit.com/r/awesomewm/comments/nvz3cn/show_desktop_function/

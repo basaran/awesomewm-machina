@@ -27,8 +27,8 @@ root.keys(gears.table.join(config.globalkeys, machina.keys))
 default shortcuts are:
 
 ```lua
-modkey + p : next in region
-modkey + o : prev in region
+modkey + [ : prev in region
+modkey + ] : next in region
 
 modkey + insert : move top left
 modkey + delete : move bottom left
