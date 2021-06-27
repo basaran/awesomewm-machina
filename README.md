@@ -29,14 +29,14 @@ Often times, the floating windows pollutes your background if you are using `use
 
 - Floating and Tiled
 
-All keybindings work seamlessy on both tiled and floating clients. So, if you need to push that terminal to a corner, you can easily do so without changing it to tiling mode.
+All keybindings, including swapping work seamlessy on both the tiled and the floating windows. So, if you need to push that terminal to a corner, you can easily do so without changing it to tiling mode.
 
 ### next?
 
 The region shuffling works like tabs, but it would be nice to have a visual queue like tabs. That will be in the next version.
 
 
-### problems? requests?
+### problems?
 
 If you have any issues, please feel free to open a request. PRs are most welcome.
 
