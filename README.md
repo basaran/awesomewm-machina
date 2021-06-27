@@ -91,7 +91,8 @@ modkey + shift + i : move to up region
 ```
 
 ### Preview
-https://user-images.githubusercontent.com/30809170/121564284-48bf6d80-c9e9-11eb-982c-6abfbf1fddf1.mp4
+https://user-images.githubusercontent.com/30809170/123538385-ab5f7b80-d702-11eb-9a14-e8b9045d9d27.mp4
+
 
 
 
