@@ -226,7 +226,6 @@ local function expand_horizontal(direction)
       end --| reset toggle maximized state
 
       if c.direction == direction then
-      naughty.notify({text="exec"})
          c.direction = nil
          return
       end --| reset toggle when sending same shortcut
@@ -277,13 +276,14 @@ local function expand_horizontal(direction)
          if not c.floating then
             c.direction = "center"
             c.maximized_horizontal = true
-            client.focus:geometry(geoms.p1080())
+            
          end
-
          
          gears.timer.delayed_call(function () 
+            client.focus:geometry(geoms.p1080())
             awful.placement.centered(client.focus)
-         end) --| give it some time before centering
+         end) --| give it time in case maximize_horizontal is
+              --| adjusted before centering
          
          return
       end
