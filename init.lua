@@ -1,203 +1,148 @@
----------------------------------------------------------> dependencies -- ;
 
+---------------------------------------------------------- dependencies -- ;
+local capi = {root=root}
 local gears = require("gears")
+local naughty = require("naughty")
+local inspect = require('inspect')
 local awful = require("awful")
 local modkey = "Mod4"
-local show_desktop = true
 
-local function tablelength(T)
-   local count = 0
-   for _ in pairs(T) do count = count + 1 end
-   return count
-end
+local machina = require('awesomewm-machina.methods')
 
+local compare = machina.compare
+local region_tablist = machina.region_tablist
+local focus_by_direction = machina.focus_by_direction
+local get_active_regions = machina.get_active_regions
+local shift_by_direction = machina.shift_by_direction
+local expand_horizontal = machina.expand_horizontal
+local geoms = machina.geoms
+local shuffle = machina.shuffle
+local my_shifter = machina.my_shifter
+local expand_vertical = machina.expand_vertical
 
---------------------------------------------------------------> methods -- ;
+---------------------------------------------------------- key bindings -- ;
 
-local function region_tablist()
-   local focused_screen = awful.screen.focused()
-   local workarea = awful.screen.focused().workarea
-   local selected_tag = awful.screen.focused().selected_tag
-   local tablist = {}
-   local active_region = nil
+local bindings = {
+   ----------------╮
+   --│ SHUFFLE     ◊◊
+   ----------------╯
+   awful.key({modkey}, ";", shift_by_direction("left")),
+   --+ standard shift client logic 
 
-   local regions = awful.layout.get(focused_screen).machi_get_regions(workarea, selected_tag)
-   --+ table of regions on the selected screen and tag
+   awful.key({modkey}, "'", shift_by_direction("right")),
+   --+ standard shift client logic
 
-   if not client.focus then return {} end
-   --+ flow control
+   awful.key({modkey, "Shift"}, ";", shift_by_direction("left", true)),
+   --+ standard shift swap left
 
-   for i, a in ipairs(regions) do
-      if a.x <= client.focus.x and client.focus.x < a.x + a.width and
-         a.y <= client.focus.y and client.focus.y < a.y + a.height
-      then
-         active_region = i
-      end
-   end
-   --+ focused client's region
+   awful.key({modkey, "Shift"}, "'", shift_by_direction("right", true)),
+   --+ standard shift swap right
 
-   for _, tc in ipairs(screen[focused_screen].tiled_clients) do
-      if not (tc.floating or tc.immobilized) then
-         if regions[active_region].x <= tc.x + tc.width + tc.border_width * 2 and
-            tc.x <= regions[active_region].x + regions[active_region].width  and
-            regions[active_region].y <= tc.y + tc.height + tc.border_width * 2  and
-            tc.y <= regions[active_region].y + regions[active_region].height 
-         then
-            tablist[#tablist + 1] = tc
-         end
-      end
-   end
-   --+ tablist inside the active region
+   awful.key({modkey, "Shift"}, "[", my_shifter("backward")),
+   --+ custom shift client logic
+
+   awful.key({modkey, "Shift"}, "]", my_shifter("forward")),
+   --+ custom shift client logic
+
+   awful.key({modkey}, "[", shuffle("backward")),
+   --+ shuffle back
+
+   awful.key({modkey}, "]", shuffle("forward")),
+   --+ shuffle forward
+
+   ----------------╮
+   --│ PLACEMENT   ◊◊
+   ----------------╯
+   awful.key({modkey}, "Insert", expand_horizontal("left")),
+   --+ expand to right
    
-   if tablelength(tablist) == 1 then 
-      return {}
-   end
-   --+ flow control: if there is only one client in the
-   --> region, there is nothing to shuffle. having this here
-   --> makes it easier to avoid if nesting later.
+   awful.key({modkey}, "Page_Up", expand_horizontal("right")),
+   --+ expand to left
 
-    return tablist
-end
---+ tablist order is adjusted by awesomewm and it will
---> always have the focused client as the first item.
+   awful.key({modkey}, "Home", expand_horizontal("center")),
+   --+ expand to center as float
 
----------------------------------------------------------> key bindings -- ;
+   awful.key({modkey}, "End", function() 
+      client.focus.maximized_vertical = false
+      client.focus.maximized_horizontal = false
+      awful.client.floating.toggle()
+   end),
+   --+ toggle floating status
 
-local keys = gears.table.join(
+   awful.key({modkey}, "Delete", expand_vertical),
+   --+ expand to right
+
+   ----------------╮
+   --│ FOCUS       ◊◊
+   ----------------╯
+   awful.key({modkey}, "Left", focus_by_direction("left")),
+   --+ stack friendly focus left
+
+   awful.key({modkey}, "j", focus_by_direction("left")),
+   --+ stack friendly focus left
+
+   awful.key({modkey}, "Down", focus_by_direction("down")),
+   --+ stack friendly focus down
+
+   awful.key({modkey}, "k", focus_by_direction("down")),
+   --+ stack friendly focus down
    
-   ----------------------> SHUFFLE <----------------------
+   awful.key({modkey}, "Right", focus_by_direction("right")),
+   --+ stack friendly focus right
 
-   awful.key({modkey}, "[", function () 
-      local tablist = region_tablist()
-      local prev_client = nil
+   awful.key({modkey}, "l", focus_by_direction("right")),
+   --+ stack friendly focus right
 
-      for i = #tablist, 1, -1 do
-         prev_client = tablist[i]
-         prev_client:emit_signal("request::activate", "mouse_enter",{raise = true})
-         break
-         --+ activate previous client
-      end
-   end),
-   ----+ shortcut: shuffle back
+   awful.key({modkey}, "Up", focus_by_direction("up")),
+   --+ stack friendly focus up
 
-   awful.key({modkey}, "]", function ()
-      local tablist = region_tablist()
-      local next_client = nil
-
-      for _, cc in ipairs(tablist) do
-         client.focus:lower()
-         next_client = tablist[_+1]
-         next_client:emit_signal("request::activate", "mouse_enter",{raise = true})
-         break
-         --+ activate next client
-      end
-    end),
-    ----+ shortcut: shuffle forward
-
-
-   ----------------------> PLACEMENT <----------------------
-
-   awful.key({modkey}, "Page_Up", function () 
-      if not client.focus then return false end
-
-      client.focus:geometry({width=800,height=800})
-      awful.placement.top_right(client.focus)
-      client.focus:raise() 
-   end),
-   ----+ shortcut: align top-right
-
-   awful.key({modkey}, "Page_Down", function () 
-      if not client.focus then return false end
-
-      client.focus:geometry({width=800,height=800})
-      awful.placement.bottom_right(client.focus)
-      client.focus:raise() 
-   end),
-   ----+ shortcut: align bottom-right
-
-   awful.key({modkey}, "Home", function () 
-      if not client.focus.floating then client.focus.floating = true end
-      awful.placement.centered(client.focus) 
-      client.focus:raise() 
-   end),
-   ----+ shortcut: align center as float
-
-   awful.key({modkey}, "Insert", function ()
-      if not client.focus then return false end
-
-      awful.placement.top_left(client.focus) 
-      client.focus:raise() 
-   end),
-   ----+ shortcut: align top-left
-
-   awful.key({modkey}, "Delete", function () 
-      if not client.focus then return false end
-
-      awful.placement.bottom_left(client.focus) 
-      client.focus:raise() 
-   end),
-   ----+ shortcut: align bottom-left
-
-   ----------------------> NAVIGATION <----------------------
-
-   awful.key({modkey}, "j", function () 
-      if not client.focus then return false end
-
-      awful.client.focus.bydirection("left", nil,true)
-      client.focus:raise()
-   end),
-   ----+ shortcut: stack friendly left
-
-   awful.key({modkey}, "k", function ()
-      if not client.focus then return false end
-
-      awful.client.focus.bydirection("down", nil,true)
-      client.focus:raise()
-   end),
-   ----+ shortcut: stack friendly down
-   
-   awful.key({modkey}, "l", function ()
-      if not client.focus then return false end
-
-      awful.client.focus.bydirection("right", nil,true)
-      client.focus:raise()
-   end),
-   ----+ shortcut: stack friendly right
-
-   awful.key({modkey}, "i", function ()
-      if not client.focus then return false end
-
-      awful.client.focus.bydirection("up", nil,true)
-      client.focus:raise()
-   end)
-   ----+ shortcut: stack friendly up
-
-   ----------------------> MISC <----------------------
-
-   -- awful.key({modkey}, "F9", function ()
-   --    if show_desktop then 
-   --       awful.tag.viewnone()
-   --       show_desktop = false
-   --       return false
-   --    end
-
-   --    if not show_desktop then
-   --       awful.tag.viewtoggle()
-   --       return false
-   --    end
-   -- end)
-   ----+ shortcut: stack friendly up
-
-
-)
-
---------------------------------------------------------------> exports -- ;
-
-local module = {
-   keys = keys,
-   tablist = tablist
+   awful.key({modkey}, "i", focus_by_direction("up"))
+   --+ stack friendly focus up
 }
 
-return module
+--------------------------------------------------------------- signals -- ;
+
+client.connect_signal("request::activate", function(c) 
+   c.hidden = false
+   c:raise()
+   client.focus = c
+end) ----| this is needed to ensure floating stuff becomes
+     ----| visible when invoked through run_or_raise
+
+client.connect_signal("focus", function(c) 
+   if not c.floating then
+      for _, tc in ipairs(screen[awful.screen.focused()].all_clients) do
+         if tc.floating then
+            tc.hidden = true
+         end
+      end
+      return
+   end
+
+   if c.floating then
+      for _, tc in ipairs(screen[awful.screen.focused()].all_clients) do
+         if tc.floating and not tc.role then
+            tc.hidden = false
+         end
+      end
+      return
+   end
+end) ----| hide all floating windows when the user switches to a
+     ----| tiled client. this is handy when you have a floating
+     ----| browser open.
+
+--------------------------------------------------------------- exports -- ;
+
+module = {
+   bindings = bindings,
+'';}
+
+local function new(arg)
+   capi.root.keys(awful.util.table.join(capi.root.keys(), table.unpack(bindings)))
+   return module
+end
+
+return setmetatable(module, { __call = function(_,...) return new({...}) end })
 
 
+-- return module
