@@ -12,6 +12,15 @@ geoms.crt43 = function ()
    }
 end
 
+geoms.p1080 = function ()
+   return {
+      x = awful.screen.focused().workarea.width - client.focus:geometry().width,
+      y = awful.screen.focused().workarea.height - client.focus:geometry().height,
+      width = awful.screen.focused().workarea.width * 0.70,
+      height = awful.screen.focused().workarea.height * 0.90
+   }
+end
+
 local function compare(a,b)
    return a.v < b.v
 end
@@ -217,6 +226,7 @@ local function expand_horizontal(direction)
       end --| reset toggle maximized state
 
       if c.direction == direction then
+      naughty.notify({text="exec"})
          c.direction = nil
          return
       end --| reset toggle when sending same shortcut
@@ -225,8 +235,7 @@ local function expand_horizontal(direction)
       local stuff = get_active_regions()
       local target = grect.get_in_direction(direction, stuff.regions, client.focus:geometry())
       
-      if not target and direction ~= "center" then return end
-      -- flow control
+      if not target and direction ~= "center" then return end -- flow control
 
       if direction == "right" then
          tobe = {
@@ -257,15 +266,32 @@ local function expand_horizontal(direction)
       end
      
       if direction == "center" then
-         c.direction = "center"
+         
+         c.maximized = false
          c.maximixed_vertical = false
-         c.maximized_horizontal = true
-         client.focus:geometry(geoms.crt43())
-         awful.placement.centered(client.focus)
+
+         if c.floating then
+            client.focus:geometry(geoms.crt43())   
+         end
+
+         if not c.floating then
+            c.direction = "center"
+            c.maximized_horizontal = true
+            client.focus:geometry(geoms.p1080())
+         end
+
+         
+         gears.timer.delayed_call(function () 
+            awful.placement.centered(client.focus)
+         end) --| give it some time before centering
+         
          return
       end
    end
 end
+-- c.direction is used to create a fake toggling effect.
+-- tiled clients require an internal maximized property to
+-- be set, otherwise they won't budge.
 
 ----------------------------------------------------- expand_vertical() -- ;
 

@@ -1,10 +1,10 @@
 ### why?
 
-Layout-machi is great, however it requires you to use its built-in switcher to manage your open windows. If you are shuffling, swapping, and move things around a lot, this could become counter productive.
+Layout-machi is great, however it requires you to use its built-in switcher to manage your open windows. If you are shuffling, swapping, and moving things around often, this could become counter productive.
 
 `Machina` is built on top of layout-machi, and allows you to bind frequently used actions to your keys and gives you additional user friendly features.
 
-In other words, combination of `layout-machi` and `awesomewm-machina` will give you a similar (if not better) experience than the fancyzones on windows.
+A combination of `layout-machi` and `awesomewm-machina` will give you a similar experience to fancy zones on windows.
 
 ### what?
 
@@ -52,17 +52,14 @@ local machina = require('awesomewm-machina')()
 some of the default shortcuts are:
 
 ```lua
-modkey + [ : prev client within region
-modkey + ] : next client within region
+modkey + [ : prev within region
+modkey + ] : next within region
 
-modkey + shift + [ : move client to region (counter clock wise)
-modkey + shift + ] : move client to region (clock wise)
+modkey + shift + [ : move to region (counter clock wise, infinite)
+modkey + shift + ] : move to region (clock wise, infinite)
 
-modkey + ; : move client to region on left (with bump)
-modkey + ' : move client to region on right (with bump)
-
-modkey + shift + ; : swap with client on left if any
-modkey + shift + ' : swap with client on right if any
+modkey + ; : swap with client on left (if any)
+modkey + ' : swap with client on right (if any)
 
 modkey + insert : quick expand to left side (toggle)
 modkey + pageup : quick expand to right side (toggle)
@@ -72,10 +69,15 @@ modkey + end : toggle float
 
 modkey + delete : expand client vertically
 
-modkey + j : stack friendly left
-modkey + k : stack friendly down
-modkey + l : stack friendly right
-modkey + i : stack friendly up
+modkey + j : focus left
+modkey + k : focus down
+modkey + l : focus right
+modkey + i : focus up
+
+modkey + shift + j : move to left region
+modkey + shift + k : move to down region
+modkey + shift + l : move to right region
+modkey + shift + i : move to up region
 ```
 
 ### Preview
