@@ -219,7 +219,8 @@ end
 
 local function expand_horizontal(direction)
    return function ()
-      c = client.focus
+      local c = client.focus
+      local geom = nil
 
       if c.maximized_horizontal then 
          c.maximized_horizontal = false
@@ -270,17 +271,17 @@ local function expand_horizontal(direction)
          c.maximixed_vertical = false
 
          if c.floating then
-            client.focus:geometry(geoms.crt43())   
+            geom = geoms.crt43()
          end
 
          if not c.floating then
             c.direction = "center"
             c.maximized_horizontal = true
-            
+            geom = geoms.p1080()
          end
          
          gears.timer.delayed_call(function () 
-            client.focus:geometry(geoms.p1080())
+            client.focus:geometry(geom)
             awful.placement.centered(client.focus)
          end) --| give it time in case maximize_horizontal is
               --| adjusted before centering
