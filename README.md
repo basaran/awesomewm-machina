@@ -1,13 +1,12 @@
 ### why?
-
 Layout-machi is great, however it requires you to use its built-in switcher to manage your open windows. If you are shuffling, swapping, and moving things around often, this could become counter productive.
 
 `Machina` is built on top of layout-machi, and allows you to bind frequently used actions to your keys and gives you additional user friendly features.
 
 A combination of `layout-machi` and `awesomewm-machina` will give you a similar experience to fancy zones on windows.
 
-### what?
 
+### what?
 These are the features I added:
 
 - Quick Expand
@@ -22,6 +21,9 @@ Relocate clients like Elv13's collision module
 - Rotational Shifting
 Relocate clients clock wise or counter clock wise.
 
+- Shuffling
+Go backward or forward in a region, and it will cycle the clients inside that area.
+
 - Auto-Hide Floating Windows 
 Often times, the floating windows pollutes your background if you are using `useless-gaps`. Machina will hide those for you, but they can still be accessed through your window-switcher such as Rofi.
 
@@ -29,8 +31,17 @@ Often times, the floating windows pollutes your background if you are using `use
 
 All keybindings work seamlessy on both tiled and floating clients. So, if you need to push that terminal to a corner, you can easily do so without changing it to tiling mode.
 
-### install
+### next?
 
+The region shuffling works like tabs, but it would be nice to have a visual queue like tabs. That will be in the next version.
+
+
+### problems? requests?
+
+If you have any issues, please feel free to open a request. PRs are most welcome.
+
+
+### install
 switch to your awesome config folder, typically at:
 
 ```
