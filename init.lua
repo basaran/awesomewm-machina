@@ -26,17 +26,17 @@ local bindings = {
    ----------------╮
    --│ SHUFFLE     ◊◊
    ----------------╯
-   awful.key({modkey}, ";", shift_by_direction("left")),
-   --+ standard shift client logic 
+   awful.key({modkey, "Shift"}, "j", shift_by_direction("left")),
+   --+ move client to left
 
-   awful.key({modkey}, "'", shift_by_direction("right")),
-   --+ standard shift client logic
+   awful.key({modkey, "Shift"}, "l", shift_by_direction("right")),
+   --+ move client to right
 
-   awful.key({modkey, "Shift"}, ";", shift_by_direction("left", true)),
-   --+ standard shift swap left
+   awful.key({modkey}, ";", shift_by_direction("left", true)),
+   --+ swap left
 
-   awful.key({modkey, "Shift"}, "'", shift_by_direction("right", true)),
-   --+ standard shift swap right
+   awful.key({modkey}, "'", shift_by_direction("right", true)),
+   --+ swap right
 
    awful.key({modkey, "Shift"}, "[", my_shifter("backward")),
    --+ custom shift client logic
@@ -45,10 +45,10 @@ local bindings = {
    --+ custom shift client logic
 
    awful.key({modkey}, "[", shuffle("backward")),
-   --+ shuffle back
+   --+ shuffle region backward
 
    awful.key({modkey}, "]", shuffle("forward")),
-   --+ shuffle forward
+   --+ shuffle regions forward
 
    ----------------╮
    --│ PLACEMENT   ◊◊
@@ -76,28 +76,21 @@ local bindings = {
    --│ FOCUS       ◊◊
    ----------------╯
    awful.key({modkey}, "Left", focus_by_direction("left")),
-   --+ stack friendly focus left
-
    awful.key({modkey}, "j", focus_by_direction("left")),
    --+ stack friendly focus left
 
    awful.key({modkey}, "Down", focus_by_direction("down")),
-   --+ stack friendly focus down
-
    awful.key({modkey}, "k", focus_by_direction("down")),
    --+ stack friendly focus down
-   
-   awful.key({modkey}, "Right", focus_by_direction("right")),
-   --+ stack friendly focus right
 
+   awful.key({modkey}, "Right", focus_by_direction("right")),
    awful.key({modkey}, "l", focus_by_direction("right")),
    --+ stack friendly focus right
 
    awful.key({modkey}, "Up", focus_by_direction("up")),
-   --+ stack friendly focus up
-
    awful.key({modkey}, "i", focus_by_direction("up"))
    --+ stack friendly focus up
+
 }
 
 --------------------------------------------------------------- signals -- ;
@@ -134,8 +127,8 @@ end) ----| hide all floating windows when the user switches to a
 --------------------------------------------------------------- exports -- ;
 
 module = {
-   bindings = bindings,
-'';}
+   bindings = bindings
+}
 
 local function new(arg)
    capi.root.keys(awful.util.table.join(capi.root.keys(), table.unpack(bindings)))
