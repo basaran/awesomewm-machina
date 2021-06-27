@@ -9,26 +9,25 @@ A combination of `layout-machi` and `awesomewm-machina` will give you a similar 
 ### what?
 These are the features I added:
 
-- Quick Expand
+- Quick Expand:
 Added feature, expands the focused client to left, right, or vertically.
 
-- Directional Swapping
+- Directional Swapping:
 Added feature, swaps clients between regions.
 
-- Directional Shifting
+- Directional Shifting:
 Relocate clients like Elv13's collision module
 
-- Rotational Shifting
+- Rotational Shifting:
 Relocate clients clock wise or counter clock wise.
 
-- Shuffling
+- Shuffling:
 Go backward or forward in a region, and it will cycle the clients inside that area.
 
-- Auto-Hide Floating Windows 
+- Auto-Hide Floating Windows:
 Often times, the floating windows pollutes your background if you are using `useless-gaps`. Machina will hide those for you, but they can still be accessed through your window-switcher such as Rofi.
 
-- Floating and Tiled
-
+- Floating and Tiled:
 All keybindings, including swapping work seamlessy on both the tiled and the floating windows. So, if you need to push that terminal to a corner, you can easily do so without changing it to tiling mode.
 
 ### next?
