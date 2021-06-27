@@ -283,6 +283,7 @@ local function expand_horizontal(direction)
          gears.timer.delayed_call(function () 
             client.focus:geometry(geom)
             awful.placement.centered(client.focus)
+            client.focus:raise()
          end) --| give it time in case maximize_horizontal is
               --| adjusted before centering
          
