@@ -66,7 +66,7 @@ local function get_regions()
       machi_fn = layout.machi_get_regions
       machi_data = machi_fn(workarea, selected_tag)
       machi_regions = machi_data
-   end --| version 1
+   end --|version 1
 
    if layout.machi_get_instance_data then
       machi_fn = layout.machi_get_instance_data
@@ -77,7 +77,7 @@ local function get_regions()
           if machi_regions[i].habitable == false  then
               table.remove(machi_regions, i)
           end
-      end --| remove unhabitable regions
+      end --|remove unhabitable regions
 
       table.sort(
          machi_regions,
@@ -90,9 +90,9 @@ local function get_regions()
                return s1 > s2
             end
          end
-      ) --| unlike v1, v2 returns unordered region list and
-        --| needs sorting
-   end --| version 2/NG
+      ) --|unlike v1, v2 returns unordered region list and
+        --|needs sorting
+   end --|version 2/NG
 
    return machi_regions, machi_fn
 end
@@ -106,10 +106,10 @@ local function get_active_regions()
    local regions = get_regions()
    
    if (not regions) then return {} end
-   -- flow control
+   --|flow control
 
    if not client.focus then return {} end
-   -- flow control
+   --|flow control
 
    if client.focus.x < 0 or client.focus.y < 0 
       then outofboundary = true 
@@ -125,11 +125,11 @@ local function get_active_regions()
       proximity[i] = {
          index = i,
          v = math.abs(px * py)
-      } --│ keep track of proximity in case nothing matches in
-        --│ this block.
+      } --│keep track of proximity in case nothing matches in
+        --│this block.
 
-   end --│ figures out focused client's region under normal
-       --│ circumstances.
+   end --│figures out focused client's region under normal
+       --│circumstances.
 
    if not active_region then
       table.sort(proximity, compare)       --| sort to get the smallest area
@@ -144,16 +144,16 @@ local function get_active_regions()
          then
             outofboundary = true
          end
-      end --| when client is not the same size as the located
-          --| region, we should still consider this as out of
-          --| boundary
-   end --| user is probably executing get_active_regions on a
-       --| floating window.
+      end --|when client is not the same size as the located
+          --|region, we should still consider this as out of
+          --|boundary
+   end --|user is probably executing get_active_regions on a
+       --|floating window.
 
    if not active_region then
       active_region = 1
-   end --| at this point, we are out of options, set the index
-       --| to one and hope for the best.
+   end --|at this point, we are out of options, set the index
+       --|to one and hope for the best.
 
    return {
       active_region = active_region,
@@ -161,8 +161,8 @@ local function get_active_regions()
       outofboundary = outofboundary
    }
 end
--- tablist order is adjusted by awesomewm and it will
--- always have the focused client as the first item.
+--|tablist order is adjusted by awesomewm and it will
+--|always have the focused client as the first item.
 
 ------------------------------------------------------ region_tablist() -- ;
 
@@ -176,10 +176,10 @@ local function region_tablist()
    local regions = get_regions()
    
    if (not regions) then return {} end
-   -- flow control
+   --|flow control
 
    if not client.focus then return {} end
-   -- flow control
+   --|flow control
 
    if client.floating then return {} end
 
@@ -189,7 +189,7 @@ local function region_tablist()
       then
          active_region = i
       end
-   end --| focused client's region
+   end --|focused client's region
 
    for _, tc in ipairs(screen[focused_screen].tiled_clients) do
       if not (tc.floating or tc.immobilized) then
@@ -201,19 +201,19 @@ local function region_tablist()
             tablist[#tablist + 1] = tc
          end
       end
-   end --| tablist inside the active region
+   end --|tablist inside the active region
    
    if tablelength(tablist) == 1 then 
       return {}
-   end --| flow control: if there is only one client in the
-       --| region, there is nothing to shuffle. having this here
-       --| makes it easier to avoid if nesting later.
+   end --|flow control: if there is only one client in the
+       --|region, there is nothing to shuffle. having this here
+       --|makes it easier to avoid if nesting later.
 
     return tablist
 end
--- tablist order is adjusted by awesomewm and it will
--- always have the focused client as the first item.
--- list of all the clients within a region.
+--|tablist order is adjusted by awesomewm and it will
+--|always have the focused client as the first item.
+--|list of all the clients within a region.
 
 ----------------------------------------------------- expand_horizontal -- ;
 
@@ -334,21 +334,27 @@ local function expand_vertical()
    if going == "down" then
       tobe = {
          y=c.y,
+         x=c.x,
+         width=c.width,
          height=stuff.regions[target].y + stuff.regions[target].height - c.y
       }
    end
 
    if going == "up" then
       tobe = {
+         x=c.x,
+         width=c.width,
          y=stuff.regions[target].y,
          height= c.height + c.y - stuff.regions[target].y
       }
    end
 
    c.maximized_vertical = true
-   c.height = tobe.height
-   c.y = tobe.y
-   c:raise()
+
+   gears.timer.delayed_call(function () 
+      client.focus:geometry(tobe)
+      client.focus:raise()
+   end)
 
    return
 end
@@ -503,6 +509,7 @@ local function my_shifter(direction)
 
    end   
 end
+
 --------------------------------------------------------------- exports -- ;
 
 module = {
