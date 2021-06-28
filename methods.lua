@@ -245,7 +245,6 @@ local function expand_horizontal(direction)
             height=c.height,
             y=c.y
          }
-         naughty.notify({text=inspect(stuff.regions[target])})
          c.direction = direction
          c.maximized_horizontal = true
          c.maximixed_vertical = false
@@ -380,8 +379,6 @@ local function shift_by_direction(direction, swap)
       local target = grect.get_in_direction(direction, stuff.regions, client.focus:geometry())
       --| awesomewm magic function to find out what lies
       --| ahead and beyond based on the direction
-
-      naughty.notify({text=inspect(target)})
 
       if not target then
          target = stuff.active_region + 1 
