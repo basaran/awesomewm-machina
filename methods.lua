@@ -224,49 +224,58 @@ local function expand_horizontal(direction)
 
       if c.maximized_horizontal then 
          c.maximized_horizontal = false
-      end --| reset toggle maximized state
+      end --|reset toggle maximized state
 
       if c.direction == direction then
          c.direction = nil
          return
-      end --| reset toggle when sending same shortcut
-          --| consequitively
+      end --|reset toggle when sending same shortcut
+          --|consequitively
 
       local stuff = get_active_regions()
       local target = grect.get_in_direction(direction, stuff.regions, client.focus:geometry())
       
       if not target and direction ~= "center" then return end -- flow control
 
+      --▨▨▨
       if direction == "right" then
          tobe = {
             x=c.x,
-            width=stuff.regions[target].x + stuff.regions[target].width - c.x
+            width=math.abs(stuff.regions[target].x + stuff.regions[target].width - c.x),
+            height=c.height,
+            y=c.y
          }
+         naughty.notify({text=inspect(stuff.regions[target])})
          c.direction = direction
          c.maximized_horizontal = true
          c.maximixed_vertical = false
-         c.width = tobe.width
-         c.x = tobe.x
-         c:raise()
+
+         gears.timer.delayed_call(function () 
+            client.focus:geometry(tobe)
+         end)
          return
       end
 
+      --▨▨▨
       if direction == "left" then
          tobe = {
             x=stuff.regions[target].x,
-            width=c.x + c.width - stuff.regions[target].x
+            width=c.x + c.width - stuff.regions[target].x,
+            height=c.height,
+            y=c.y
          }
          c.direction = direction
          c.maximized_horizontal = true
          c.maximixed_vertical = false
-         c.width = tobe.width
-         c.x = tobe.x
-         c:raise()
+
+         gears.timer.delayed_call(function () 
+            client.focus:geometry(tobe)
+         end)
          return
       end
      
+      --▨▨▨
       if direction == "center" then
-         
          c.maximized = false
          c.maximixed_vertical = false
 
@@ -284,16 +293,15 @@ local function expand_horizontal(direction)
             client.focus:geometry(geom)
             awful.placement.centered(client.focus)
             client.focus:raise()
-         end) --| give it time in case maximize_horizontal is
-              --| adjusted before centering
-         
+         end) --|give it time in case maximize_horizontal is
+              --|adjusted before centering
          return
       end
    end
 end
--- c.direction is used to create a fake toggling effect.
--- tiled clients require an internal maximized property to
--- be set, otherwise they won't budge.
+--|c.direction is used to create a fake toggling effect.
+--|tiled clients require an internal maximized property to
+--|be set, otherwise they won't budge.
 
 ----------------------------------------------------- expand_vertical() -- ;
 
@@ -304,25 +312,25 @@ local function expand_vertical()
    if c.maximized_vertical then 
       c.maximized_vertical = false
       return
-   end --| reset toggle maximized state
+   end --|reset toggle maximized state
 
    local stuff = get_active_regions()
    local target = grect.get_in_direction("down", stuff.regions, client.focus:geometry())
    
    if target and stuff.regions[target].x ~= c.x then
       return
-   end --| flow control
-       --| ensure we are operating in the same X axis,
-       --| vertical directions jump around
+   end --|flow control
+       --|ensure we are operating in the same X axis,
+       --|vertical directions jump around
 
    if not target then
       going = "up"
       target = grect.get_in_direction("up", stuff.regions, client.focus:geometry())
-   end --| flow control
-       --| try reverse direction
+   end --|flow control
+       --|try reverse direction
 
    if not target then return end
-   -- flow control
+   --|flow control
    
    if going == "down" then
       tobe = {
@@ -358,15 +366,15 @@ local function shift_by_direction(direction, swap)
          for i,c in ipairs(cltbl) do
             if c.x == region.x and c.y == region.y then
                map[a] = i
-               break --| avoid stacked regions
+               break --|avoid stacked regions
             end
          end
       end --◸
-          --| client list order we obtain via cltbl changes in
-          --| each invokation, therfore we need to map the
-          --| client table onto the region_list from machi.
-          --| this will give us the region numbers of clients. 
-          --| naughty.notify({text=inspect(map)})
+          --|client list order we obtain via cltbl changes in
+          --|each invokation, therfore we need to map the
+          --|client table onto the region_list from machi.
+          --|this will give us the region numbers of clients. 
+          --|naughty.notify({text=inspect(map)})
           --◺
 
       local target = grect.get_in_direction(direction, stuff.regions, client.focus:geometry())
@@ -382,12 +390,12 @@ local function shift_by_direction(direction, swap)
             target = stuff.active_region - 1
          end
       end --◸
-          --| we bumped into an edge, try to locate region via
-          --| region_index and if that also fails, set back the
-          --| previous region as target clock wise.
-          --| naughty.notify({text=inspect(target)})
-          --| naughty.notify({text=inspect(map[target])})
-          --| naughty.notify({text=inspect(cltbl[map[target]])})
+          --|we bumped into an edge, try to locate region via
+          --|region_index and if that also fails, set back the
+          --|previous region as target clock wise.
+          --|naughty.notify({text=inspect(target)})
+          --|naughty.notify({text=inspect(map[target])})
+          --|naughty.notify({text=inspect(cltbl[map[target]])})
           --◺
 
       tobe = stuff.regions[target]
@@ -395,14 +403,14 @@ local function shift_by_direction(direction, swap)
 
       client.focus:geometry(tobe)
       client.focus:raise()
-      -- relocate
+      --|relocate
 
       swapee = cltbl[map[target]]
-      -- try to get client at target region
+      --|try to get client at target region
 
       if swap and swapee then
          swapee:geometry(is)
-         swapee:raise()
+         swapee:emit_signal("request::activate", "mouse_enter",{raise = true})
       end
 
       -- naughty.notify({text=inspect(cltbl[2]:geometry())})
@@ -421,7 +429,7 @@ local function shuffle(direction)
          for i = #tablist, 1, -1 do
             prev_client = tablist[i]
             prev_client:emit_signal("request::activate", "mouse_enter",{raise = true})
-            break --| activate previous client
+            break --|activate previous client
          end
          return
       end
@@ -434,7 +442,7 @@ local function shuffle(direction)
             client.focus:lower()
             next_client = tablist[_+1]
             next_client:emit_signal("request::activate", "mouse_enter",{raise = true})
-            break --| activate next client
+            break --|activate next client
          end
          return
       end
@@ -454,11 +462,11 @@ local function my_shifter(direction)
             next_region=stuff.regions[1]
          else
             next_region=stuff.regions[client_region+1]
-         end --| figure out the action
+         end --|figure out the action
 
          if stuff.outofboundary then
             next_region=stuff.regions[client_region]
-         end --| ignore action, and push inside the boundary instead
+         end --|ignore action, and push inside the boundary instead
 
          client.focus:geometry({
             x=next_region.x,
@@ -480,11 +488,11 @@ local function my_shifter(direction)
             previous_region = stuff.regions[#stuff.regions]
          else
             previous_region = stuff.regions[client_region-1]
-         end --| figure out the action
+         end --|figure out the action
 
          if stuff.outofboundary then
             previous_region = stuff.regions[client_region]
-         end --| ignore action, and push inside the boundary instead
+         end --|ignore action, and push inside the boundary instead
 
          client.focus:geometry({
             x=previous_region.x,

@@ -1,5 +1,8 @@
 
 ---------------------------------------------------------- dependencies -- ;
+
+-- local chainbind = require("chainbind")
+
 local capi = {root=root}
 local gears = require("gears")
 local naughty = require("naughty")
@@ -24,78 +27,78 @@ local expand_vertical = machina.expand_vertical
 
 local bindings = {
    ----------------╮
-   --│ SHUFFLE     ◊◊
+   --▨ SHUFFLE    ▨
    ----------------╯
+   awful.key({modkey}, ";", shuffle("backward")),
+   --|shuffle region backward
+
+   awful.key({modkey}, "'", shuffle("forward")),
+   --|shuffle regions forward
+
    awful.key({modkey, "Shift"}, "j", shift_by_direction("left")),
-   --+ move client to left
+   --|move client to left
 
    awful.key({modkey, "Shift"}, "l", shift_by_direction("right")),
-   --+ move client to right
+   --|move client to right
 
    awful.key({modkey, "Shift"}, "k", shift_by_direction("down")),
-   --+ move client to down
+   --|move client to down
 
    awful.key({modkey, "Shift"}, "i", shift_by_direction("up")),
-   --+ move client to down
-
-   awful.key({modkey}, ";", shift_by_direction("left", true)),
-   --+ swap left
-
-   awful.key({modkey}, "'", shift_by_direction("right", true)),
-   --+ swap right
+   --|move client to down
 
    awful.key({modkey}, "[", my_shifter("backward")),
-   --+ custom shift client logic
+   --|custom shift client logic
 
    awful.key({modkey}, "]", my_shifter("forward")),
-   --+ custom shift client logic
+   --|custom shift client logic
 
-   awful.key({modkey, "Shift"}, "[", shuffle("backward")),
-   --+ shuffle region backward
+   awful.key({modkey, "Shift"}, "[", shift_by_direction("left", true)),
+   --|swap left
 
-   awful.key({modkey, "Shift"}, "]", shuffle("forward")),
-   --+ shuffle regions forward
+   awful.key({modkey, "Shift"}, "]", shift_by_direction("right", true)),
+   --|swap right
 
    ----------------╮
-   --│ PLACEMENT   ◊◊
+   --▨ PLACEMENT  ▨
    ----------------╯
    awful.key({modkey}, "Insert", expand_horizontal("left")),
-   --+ expand to right
+   --|expand to right
    
    awful.key({modkey}, "Page_Up", expand_horizontal("right")),
-   --+ expand to left
+   --|expand to left
 
    awful.key({modkey}, "Home", expand_horizontal("center")),
-   --+ expand to center as float
+   --|expand to center as float
 
    awful.key({modkey}, "End", function() 
       client.focus.maximized_vertical = false
       client.focus.maximized_horizontal = false
       awful.client.floating.toggle()
    end),
-   --+ toggle floating status
+   --|toggle floating status
 
    awful.key({modkey}, "Page_Down", expand_vertical),
-   --+ expand vertical
+   --|expand vertical
 
    ----------------╮
-   --│ FOCUS       ◊◊
+   --▨ FOCUS      ▨
    ----------------╯
    awful.key({modkey}, "Left", focus_by_direction("left")),
    awful.key({modkey}, "j", focus_by_direction("left")),
-   --+ stack friendly focus left
+   --|stack friendly focus left
 
    awful.key({modkey}, "Down", focus_by_direction("down")),
    awful.key({modkey}, "k", focus_by_direction("down")),
-   --+ stack friendly focus down
+   --|stack friendly focus down
 
    awful.key({modkey}, "Right", focus_by_direction("right")),
    awful.key({modkey}, "l", focus_by_direction("right")),
-   --+ stack friendly focus right
+   --|stack friendly focus right
 
    awful.key({modkey}, "Up", focus_by_direction("up")),
    awful.key({modkey}, "i", focus_by_direction("up"))
-   --+ stack friendly focus up
+   --|stack friendly focus up
 
 }
 
@@ -105,8 +108,8 @@ client.connect_signal("request::activate", function(c)
    c.hidden = false
    c:raise()
    client.focus = c
-end) ----| this is needed to ensure floating stuff becomes
-     ----| visible when invoked through run_or_raise
+end) --|this is needed to ensure floating stuff becomes
+     --|visible when invoked through run_or_raise
 
 client.connect_signal("focus", function(c) 
    if not c.floating then
@@ -126,9 +129,9 @@ client.connect_signal("focus", function(c)
       end
       return
    end
-end) ----| hide all floating windows when the user switches to a
-     ----| tiled client. this is handy when you have a floating
-     ----| browser open.
+end) --|hide all floating windows when the user switches to a
+     --|tiled client. this is handy when you have a floating
+     --|browser open.
 
 --------------------------------------------------------------- exports -- ;
 
