@@ -100,6 +100,7 @@ modkey + shift + home :  move to center
 modkey + shift + end :  move to center
 modkey + shift + delete :  move to bottom-left
 modkey + shift + page_down :  move to bottom-right
+-- these will also work with tiled clients
 ```
 
 
