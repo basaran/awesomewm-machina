@@ -20,6 +20,7 @@ local geoms = machina.geoms
 local shuffle = machina.shuffle
 local my_shifter = machina.my_shifter
 local expand_vertical = machina.expand_vertical
+local move_to = machina.move_to
 
 ---------------------------------------------------------- key bindings -- ;
 
@@ -36,7 +37,15 @@ local bindings = {
 
    awful.key({modkey}, "[", my_shifter("backward")),
    awful.key({modkey}, "]", my_shifter("forward")),
-   --▨ move (clock)
+   --▨ move (clockwise)
+
+   awful.key({modkey, "Shift"}, "Insert", move_to("top-left")),
+   awful.key({modkey, "Shift"}, "Page_Up", move_to("top-right")),
+   awful.key({modkey, "Shift"}, "Home", move_to("center")),
+   awful.key({modkey, "Shift"}, "End", move_to("center")),
+   awful.key({modkey, "Shift"}, "Delete", move_to("bottom-left")),
+   awful.key({modkey, "Shift"}, "Page_Down", move_to("bottom-right")),
+   --▨ move (positional)
 
    awful.key({modkey, "Shift"  }, "[", shift_by_direction("left", true)),
    awful.key({modkey, "Shift"  }, "]", shift_by_direction("right", true)),
@@ -48,13 +57,13 @@ local bindings = {
    awful.key({modkey}, "Page_Up", expand_horizontal("right")),
    awful.key({modkey}, "Home", expand_horizontal("center")),
    awful.key({modkey}, "Page_Down", expand_vertical),
+   --▨ expand (neighbor)
 
    awful.key({modkey}, "End", function() 
       client.focus.maximized_vertical = false
       client.focus.maximized_horizontal = false
       awful.client.floating.toggle()
    end), --|toggle floating status
-   --▨ expand
 
    awful.key({modkey}, "Left", focus_by_direction("left")),
    awful.key({modkey}, "j", focus_by_direction("left")),

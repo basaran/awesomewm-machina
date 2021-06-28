@@ -1,24 +1,74 @@
 ---------------------------------------------------------------- locals -- ;
 
 local grect = require("gears.geometry").rectangle
+
 local geoms = {}
 
 geoms.crt43 = function ()
    return {
-      x = awful.screen.focused().workarea.width - client.focus:geometry().width,
-      y = awful.screen.focused().workarea.height - client.focus:geometry().height,
-      width = 1280,
-      height = 1024
+      x=awful.screen.focused().workarea.width - client.focus:geometry().width,
+      y=awful.screen.focused().workarea.height - client.focus:geometry().height,
+      width=1280,
+      height=1024
    }
 end
 
 geoms.p1080 = function ()
    return {
-      x = awful.screen.focused().workarea.width - client.focus:geometry().width,
-      y = awful.screen.focused().workarea.height - client.focus:geometry().height,
-      width = awful.screen.focused().workarea.width * 0.65,
-      height = awful.screen.focused().workarea.height * 0.90
+      x=awful.screen.focused().workarea.width - client.focus:geometry().width,
+      y=awful.screen.focused().workarea.height - client.focus:geometry().height,
+      width=awful.screen.focused().workarea.width * 0.65,
+      height=awful.screen.focused().workarea.height * 0.90
    }
+end
+
+geoms["center"] = function(useless_gap)
+   return {
+      x=awful.screen.focused().workarea.width/2 - client.focus.width/2,
+      y=awful.screen.focused().workarea.height/2 - client.focus.height/2
+   }
+end
+
+geoms["top-left"] = function(useless_gap)
+   return {
+      x=useless_gap,
+      y=useless_gap
+   }
+end
+
+geoms["bottom-left"] = function(useless_gap)
+   return {
+      x=useless_gap,
+      y=awful.screen.focused().workarea.height - useless_gap - client.focus.height
+   }
+end
+
+geoms["top-right"] = function(useless_gap)
+   return {
+      x=awful.screen.focused().workarea.width - useless_gap - client.focus.width,
+      y=useless_gap
+   }
+end
+
+geoms["bottom-right"] = function(useless_gap)
+   return {
+      x=awful.screen.focused().workarea.width - useless_gap - client.focus.width,
+      y=awful.screen.focused().workarea.height - useless_gap - client.focus.height
+   }
+end
+
+--------------------------------------------------------------- helpers -- ;
+
+local function getLowest(table)
+   local low = math.huge
+   local index
+   for i, v in pairs(table) do
+      if v < low then
+         low = v
+         index = i
+      end
+   end
+   return index
 end
 
 local function compare(a,b)
@@ -31,6 +81,13 @@ local function tablelength(T)
    return count
 end
 
+local function notify(x)
+   return naughty.notify({preset = naughty.config.presets.critical, text=inspect(x)})
+end
+
+
+----------------------------------------- focus_by_direction(direction) -- ;
+
 local function focus_by_direction(direction)
    return function()
       if not client.focus then return false end
@@ -38,6 +95,8 @@ local function focus_by_direction(direction)
       client.focus:raise()
    end
 end
+
+--------------------------------------------------------- screen_info() -- ;
 
 local function screen_info()
    local focused_screen = awful.screen.focused() or nil
@@ -95,6 +154,26 @@ local function get_regions()
    end --|version 2/NG
 
    return machi_regions, machi_fn
+end
+
+----------------------------------------------------------- get_edges() -- ;
+
+
+local function move_to(location)
+   return function()
+      local useless_gap = nil
+      local regions = get_regions()
+      local edges = {x={},y={}}
+
+      for i,region in ipairs(regions) do
+         edges.x[region.x] = region.x + region.width
+         edges.y[region.y] = region.y + region.height
+      end
+
+      useless_gap = getLowest(edges.x)
+      client.focus:geometry(geoms[location](useless_gap))
+      return
+   end
 end
 
 -------------------------------------------------- get_active_regions() -- ;
@@ -522,7 +601,8 @@ module = {
    geoms = geoms,
    shuffle = shuffle,
    my_shifter = my_shifter,
-   expand_vertical = expand_vertical
+   expand_vertical = expand_vertical,
+   move_to = move_to
 }
 
 return module
