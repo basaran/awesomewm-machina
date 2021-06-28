@@ -1,10 +1,10 @@
 
 ---------------------------------------------------------- dependencies -- ;
 
+-- local inspect = require('inspect')
 local capi = {root=root}
 local gears = require("gears")
 local naughty = require("naughty")
--- local inspect = require('inspect')
 local awful = require("awful")
 local modkey = "Mod4"
 
