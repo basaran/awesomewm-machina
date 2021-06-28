@@ -74,6 +74,7 @@ modkey + ] : shift to region (clock wise, infinite)
 
 modkey + shift + [ : swap with client on left (if any)
 modkey + shift + ] : swap with client on right (if any)
+--|will keep the focus on the region you execute
 
 modkey + shift + ' : prev within region
 modkey + shift + ; : next within region
@@ -81,7 +82,11 @@ modkey + shift + ; : next within region
 modkey + insert : quick expand to left side (toggle)
 modkey + pageup : quick expand to right side (toggle)
 modkey + delete : expand client vertically
-modkey + home : center (float or tiled, tiled will toggle back to region)
+
+modkey + home : center (float or tiled)
+--|you can use this one like zooming, when executed on tiled
+--|clients, it will toggle back to original region.
+
 modkey + end : toggle float status
 
 modkey + j : focus left
@@ -100,7 +105,7 @@ modkey + shift + home :  move to center
 modkey + shift + end :  move to center
 modkey + shift + delete :  move to bottom-left
 modkey + shift + page_down :  move to bottom-right
--- these will also work with tiled clients
+--|these will also work with tiled clients
 ```
 
 
