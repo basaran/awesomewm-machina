@@ -81,11 +81,6 @@ local function tablelength(T)
    return count
 end
 
-local function notify(x)
-   return naughty.notify({preset = naughty.config.presets.critical, text=inspect(x)})
-end
-
-
 ----------------------------------------- focus_by_direction(direction) -- ;
 
 local function focus_by_direction(direction)
@@ -158,7 +153,6 @@ end
 
 ----------------------------------------------------------- get_edges() -- ;
 
-
 local function move_to(location)
    return function()
       local useless_gap = nil
@@ -169,7 +163,7 @@ local function move_to(location)
          edges.x[region.x] = region.x + region.width
          edges.y[region.y] = region.y + region.height
       end
-
+      
       useless_gap = getLowest(edges.x)
       client.focus:geometry(geoms[location](useless_gap))
       return

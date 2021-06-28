@@ -9,7 +9,6 @@ local awful = require("awful")
 local modkey = "Mod4"
 
 local machina = require('awesomewm-machina.methods')
-
 local compare = machina.compare
 local region_tablist = machina.region_tablist
 local focus_by_direction = machina.focus_by_direction
