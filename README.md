@@ -62,11 +62,11 @@ local machina = require('awesomewm-machina')()
 some of the default shortcuts are:
 
 ```lua
-modkey + [ : prev within region
-modkey + ] : next within region
+modkey + shift + [ : prev within region
+modkey + shift + ] : next within region
 
-modkey + shift + [ : move to region (counter clock wise, infinite)
-modkey + shift + ] : move to region (clock wise, infinite)
+modkey + [ : move to region (counter clock wise, infinite)
+modkey + ] : move to region (clock wise, infinite)
 
 modkey + ; : swap with client on left (if any)
 modkey + ' : swap with client on right (if any)

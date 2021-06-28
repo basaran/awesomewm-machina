@@ -32,22 +32,28 @@ local bindings = {
    awful.key({modkey, "Shift"}, "l", shift_by_direction("right")),
    --+ move client to right
 
+   awful.key({modkey, "Shift"}, "k", shift_by_direction("down")),
+   --+ move client to down
+
+   awful.key({modkey, "Shift"}, "i", shift_by_direction("up")),
+   --+ move client to down
+
    awful.key({modkey}, ";", shift_by_direction("left", true)),
    --+ swap left
 
    awful.key({modkey}, "'", shift_by_direction("right", true)),
    --+ swap right
 
-   awful.key({modkey, "Shift"}, "[", my_shifter("backward")),
+   awful.key({modkey}, "[", my_shifter("backward")),
    --+ custom shift client logic
 
-   awful.key({modkey, "Shift"}, "]", my_shifter("forward")),
+   awful.key({modkey}, "]", my_shifter("forward")),
    --+ custom shift client logic
 
-   awful.key({modkey}, "[", shuffle("backward")),
+   awful.key({modkey, "Shift"}, "[", shuffle("backward")),
    --+ shuffle region backward
 
-   awful.key({modkey}, "]", shuffle("forward")),
+   awful.key({modkey, "Shift"}, "]", shuffle("forward")),
    --+ shuffle regions forward
 
    ----------------╮
@@ -69,8 +75,8 @@ local bindings = {
    end),
    --+ toggle floating status
 
-   awful.key({modkey}, "Delete", expand_vertical),
-   --+ expand to right
+   awful.key({modkey}, "Page_Down", expand_vertical),
+   --+ expand vertical
 
    ----------------╮
    --│ FOCUS       ◊◊

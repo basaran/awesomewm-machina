@@ -16,7 +16,7 @@ geoms.p1080 = function ()
    return {
       x = awful.screen.focused().workarea.width - client.focus:geometry().width,
       y = awful.screen.focused().workarea.height - client.focus:geometry().height,
-      width = awful.screen.focused().workarea.width * 0.70,
+      width = awful.screen.focused().workarea.width * 0.65,
       height = awful.screen.focused().workarea.height * 0.90
    }
 end
@@ -373,6 +373,8 @@ local function shift_by_direction(direction, swap)
       --| awesomewm magic function to find out what lies
       --| ahead and beyond based on the direction
 
+      naughty.notify({text=inspect(target)})
+
       if not target then
          target = stuff.active_region + 1 
          
@@ -392,6 +394,7 @@ local function shift_by_direction(direction, swap)
       is = client.focus:geometry()
 
       client.focus:geometry(tobe)
+      client.focus:raise()
       -- relocate
 
       swapee = cltbl[map[target]]
