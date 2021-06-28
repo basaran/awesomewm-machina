@@ -72,9 +72,11 @@ some of the default shortcuts are:
 modkey + [ : shift to region (counter clock wise, infinite)
 modkey + ] : shift to region (clock wise, infinite)
 
-modkey + shift + [ : swap with client on left (if any)
-modkey + shift + ] : swap with client on right (if any)
---|will keep the focus on the region you execute
+modkey + shift + [ : swap with client on left
+modkey + shift + ] : swap with client on right
+--|will keep the focus on the region you execute the
+--|function, execute again to undo. if there is nothing on
+--|the direction, it will look up or down.
 
 modkey + shift + ' : prev within region
 modkey + shift + ; : next within region
