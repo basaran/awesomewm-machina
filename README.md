@@ -78,8 +78,8 @@ modkey + shift + ] : swap with client on right
 --|function, execute again to undo. if there is nothing on
 --|the direction, it will look up or down.
 
-modkey + ctrl + [ : swap with client on down
-modkey + ctrl + ] : swap with client on up
+modkey + ctrl + [ : swap with client below
+modkey + ctrl + ] : swap with client above
 --|useful for swapping with clients in corners
 
 modkey + shift + ' : prev within region
