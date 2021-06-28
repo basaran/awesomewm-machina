@@ -66,7 +66,22 @@ local machina = require('awesomewm-machina')()
 
 ### Keybindings
 
-some of the default shortcuts are:
+This module directly injects into rc.lua and ideally, all keybindings should work unless you override them in your rc.lua.
+
+If you have any issues, you can change in your `rc.lua`:
+
+```lua
+root.keys(globalkeys)
+```
+
+to:
+
+```lua
+root.keys(gears.table.join(root.keys(),globalkeys))
+```
+or, you can just copy / paste what you like from `init.lua` onto your rc.lua globalkeys table.
+
+Some of the default shortcuts are:
 
 ```lua
 modkey + [ : shift to region (counter clock wise, infinite)
