@@ -20,6 +20,7 @@ local shuffle = machina.shuffle
 local my_shifter = machina.my_shifter
 local expand_vertical = machina.expand_vertical
 local move_to = machina.move_to
+local toggle_always_on = machina.toggle_always_on
 
 ---------------------------------------------------------- key bindings -- ;
 
@@ -41,7 +42,7 @@ local bindings = {
    awful.key({modkey, "Shift"}, "Insert", move_to("top-left")),
    awful.key({modkey, "Shift"}, "Page_Up", move_to("top-right")),
    awful.key({modkey, "Shift"}, "Home", move_to("center")),
-   awful.key({modkey, "Shift"}, "End", move_to("center")),
+   awful.key({modkey, "Shift"}, "End", toggle_always_on),
    awful.key({modkey, "Shift"}, "Delete", move_to("bottom-left")),
    awful.key({modkey, "Shift"}, "Page_Down", move_to("bottom-right")),
    --▨ move (positional)
@@ -85,12 +86,12 @@ client.connect_signal("request::activate", function(c)
    c:raise()
    client.focus = c
 end) --|this is needed to ensure floating stuff becomes
-     --|visible when invoked through run_or_raise
+     --|visible when invoked through run_or_raise.
 
 client.connect_signal("focus", function(c) 
    if not c.floating then
       for _, tc in ipairs(screen[awful.screen.focused()].all_clients) do
-         if tc.floating then
+         if tc.floating and not tc.always_on then
             tc.hidden = true
          end
       end
@@ -107,7 +108,7 @@ client.connect_signal("focus", function(c)
    end
 end) --|hide all floating windows when the user switches to a
      --|tiled client. this is handy when you have a floating
-     --|browser open.
+     --|browser open. unless, client is set to always_on.
 
 --------------------------------------------------------------- exports -- ;
 

@@ -108,7 +108,10 @@ modkey + shift + i : shift to up region
 modkey + shift + insert : move to top-left
 modkey + shift + page_up :  move to top-right
 modkey + shift + home :  move to center
-modkey + shift + end :  move to center
+
+modkey + shift + end :  toggle always on
+--|will keep the floating client always visible
+
 modkey + shift + delete :  move to bottom-left
 modkey + shift + page_down :  move to bottom-right
 --|these will also work with tiled clients

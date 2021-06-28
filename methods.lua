@@ -1,3 +1,4 @@
+
 ---------------------------------------------------------------- locals -- ;
 
 local grect = require("gears.geometry").rectangle
@@ -59,7 +60,7 @@ end
 
 --------------------------------------------------------------- helpers -- ;
 
-local function getLowest(table)
+local function getlowest(table)
    local low = math.huge
    local index
    for i, v in pairs(table) do
@@ -79,6 +80,13 @@ local function tablelength(T)
    local count = 0
    for _ in pairs(T) do count = count + 1 end
    return count
+end
+
+----------------------------------------------------------- always_on() -- ;
+
+local function toggle_always_on()
+   always_on = nil or client.focus.always_on
+   client.focus.always_on = not always_on
 end
 
 ----------------------------------------- focus_by_direction(direction) -- ;
@@ -164,7 +172,7 @@ local function move_to(location)
          edges.y[region.y] = region.y + region.height
       end
       
-      useless_gap = getLowest(edges.x)
+      useless_gap = getlowest(edges.x)
       client.focus:geometry(geoms[location](useless_gap))
       return
    end
@@ -596,7 +604,8 @@ module = {
    shuffle = shuffle,
    my_shifter = my_shifter,
    expand_vertical = expand_vertical,
-   move_to = move_to
+   move_to = move_to,
+   toggle_always_on = toggle_always_on
 }
 
 return module
