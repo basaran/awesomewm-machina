@@ -1,8 +1,6 @@
 
 ---------------------------------------------------------- dependencies -- ;
 
--- local chainbind = require("chainbind")
-
 local capi = {root=root}
 local gears = require("gears")
 local naughty = require("naughty")
@@ -26,80 +24,50 @@ local expand_vertical = machina.expand_vertical
 ---------------------------------------------------------- key bindings -- ;
 
 local bindings = {
-   ----------------╮
-   --▨ SHUFFLE    ▨
-   ----------------╯
    awful.key({modkey}, ";", shuffle("backward")),
-   --|shuffle region backward
-
    awful.key({modkey}, "'", shuffle("forward")),
-   --|shuffle regions forward
+   --▨ shuffle decks
 
    awful.key({modkey, "Shift"}, "j", shift_by_direction("left")),
-   --|move client to left
-
    awful.key({modkey, "Shift"}, "l", shift_by_direction("right")),
-   --|move client to right
-
    awful.key({modkey, "Shift"}, "k", shift_by_direction("down")),
-   --|move client to down
-
    awful.key({modkey, "Shift"}, "i", shift_by_direction("up")),
-   --|move client to down
+   --▨ move (directional)
 
    awful.key({modkey}, "[", my_shifter("backward")),
-   --|custom shift client logic
-
    awful.key({modkey}, "]", my_shifter("forward")),
-   --|custom shift client logic
+   --▨ move (clock)
 
-   awful.key({modkey, "Shift"}, "[", shift_by_direction("left", true)),
-   --|swap left
+   awful.key({modkey, "Shift"  }, "[", shift_by_direction("left", true)),
+   awful.key({modkey, "Shift"  }, "]", shift_by_direction("right", true)),
+   awful.key({modkey, "Control"}, "[", shift_by_direction("down", true)),
+   awful.key({modkey, "Control"}, "]", shift_by_direction("up", true)),
+   --▨ swap (directional)
 
-   awful.key({modkey, "Shift"}, "]", shift_by_direction("right", true)),
-   --|swap right
-
-   ----------------╮
-   --▨ PLACEMENT  ▨
-   ----------------╯
    awful.key({modkey}, "Insert", expand_horizontal("left")),
-   --|expand to right
-   
    awful.key({modkey}, "Page_Up", expand_horizontal("right")),
-   --|expand to left
-
    awful.key({modkey}, "Home", expand_horizontal("center")),
-   --|expand to center as float
+   awful.key({modkey}, "Page_Down", expand_vertical),
 
    awful.key({modkey}, "End", function() 
       client.focus.maximized_vertical = false
       client.focus.maximized_horizontal = false
       awful.client.floating.toggle()
-   end),
-   --|toggle floating status
+   end), --|toggle floating status
+   --▨ expand
 
-   awful.key({modkey}, "Page_Down", expand_vertical),
-   --|expand vertical
-
-   ----------------╮
-   --▨ FOCUS      ▨
-   ----------------╯
    awful.key({modkey}, "Left", focus_by_direction("left")),
    awful.key({modkey}, "j", focus_by_direction("left")),
-   --|stack friendly focus left
 
    awful.key({modkey}, "Down", focus_by_direction("down")),
    awful.key({modkey}, "k", focus_by_direction("down")),
-   --|stack friendly focus down
 
    awful.key({modkey}, "Right", focus_by_direction("right")),
    awful.key({modkey}, "l", focus_by_direction("right")),
-   --|stack friendly focus right
 
    awful.key({modkey}, "Up", focus_by_direction("up")),
    awful.key({modkey}, "i", focus_by_direction("up"))
-   --|stack friendly focus up
-
+   --▨ focus
 }
 
 --------------------------------------------------------------- signals -- ;
@@ -148,3 +116,6 @@ return setmetatable(module, { __call = function(_,...) return new({...}) end })
 
 
 -- return module
+----------------╮
+--▨ FOCUS      ▨
+----------------╯
