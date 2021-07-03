@@ -736,8 +736,10 @@ end
 local function floating_signal(c)
    if c.floating then
       if c.region then
-         clear_tabbar(c)
-         draw_tabbar(c.region)
+         gears.timer.delayed_call(function(active_region)
+            clear_tabbar(c)
+            draw_tabbar(c.region)
+         end, active_region)
       end
    end --|window became floating
 
