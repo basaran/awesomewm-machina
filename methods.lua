@@ -1,102 +1,54 @@
 
----------------------------------------------------------------- locals -- ;
+--------------------------------------------------------- dependencies  -- ;
 
 local grect = require("gears.geometry").rectangle
+local tabs = require("machina.tabs")
+local geoms = require("machina.geoms")
+local helpers = require("machina.helpers")
 
-local geoms = {}
+local get_client_ix = helpers.get_client_ix
+local getlowest = helpers.getlowest
+local compare = helpers.compare
+local tablelength = helpers.tablelength
+local set_contains = helpers.set_contains
+local clear_tabbar = helpers.clear_tabbar
 
-geoms.crt43 = function ()
-   return {
-      x=awful.screen.focused().workarea.width - client.focus:geometry().width,
-      y=awful.screen.focused().workarea.height - client.focus:geometry().height,
-      width=1280,
-      height=1024
-   }
+---------------------------------------------------------------- locals -- ;
+
+local global_client_table = {}
+
+function get_global_clients()
+   return global_client_table
 end
 
-geoms.p1080 = function ()
-   return {
-      x=awful.screen.focused().workarea.width - client.focus:geometry().width,
-      y=awful.screen.focused().workarea.height - client.focus:geometry().height,
-      width=awful.screen.focused().workarea.width * 0.65,
-      height=awful.screen.focused().workarea.height * 0.90
-   }
+function update_global_clients(c)
+   global_client_table[c.window] = c
 end
 
-geoms["center"] = function(useless_gap)
-   return {
-      x=awful.screen.focused().workarea.width/2 - client.focus.width/2,
-      y=awful.screen.focused().workarea.height/2 - client.focus.height/2
-   }
-end
+------------------------------------------------------------- go_edge() -- ;
 
-geoms["top-left"] = function(useless_gap)
-   return {
-      x=useless_gap,
-      y=useless_gap
-   }
-end
+local function go_edge(direction, regions, current_box)
+   test_box = true
+   edge_pos = nil
 
-geoms["bottom-left"] = function(useless_gap)
-   return {
-      x=useless_gap,
-      y=awful.screen.focused().workarea.height - useless_gap - client.focus.height
-   }
-end
+   while test_box do
+      test_box = grect.get_in_direction(direction, regions, current_box)
 
-geoms["top-right"] = function(useless_gap)
-   return {
-      x=awful.screen.focused().workarea.width - useless_gap - client.focus.width,
-      y=useless_gap
-   }
-end
-
-geoms["bottom-right"] = function(useless_gap)
-   return {
-      x=awful.screen.focused().workarea.width - useless_gap - client.focus.width,
-      y=awful.screen.focused().workarea.height - useless_gap - client.focus.height
-   }
-end
-
---------------------------------------------------------------- helpers -- ;
-
-local function getlowest(table)
-   local low = math.huge
-   local index
-   for i, v in pairs(table) do
-      if v < low then
-         low = v
-         index = i
+      if test_box then
+         current_box = regions[test_box]
+         edge_pos = test_box
       end
    end
-   return index
-end
 
-local function compare(a,b)
-   return a.v < b.v
-end
-
-local function tablelength(T)
-   local count = 0
-   for _ in pairs(T) do count = count + 1 end
-   return count
-end
+   return edge_pos
+end --|
+    --|figures out the beginning of each row on the layout.
 
 ----------------------------------------------------------- always_on() -- ;
 
 local function toggle_always_on()
    always_on = nil or client.focus.always_on
    client.focus.always_on = not always_on
-end
-
------------------------------------------ focus_by_direction(direction) -- ;
-
-local function focus_by_direction(direction)
-   return function()
-      if not client.focus then return false end
-      awful.client.focus.bydirection(direction, nil,true)
-      client.focus:raise()
-   end
 end
 
 --------------------------------------------------------- screen_info() -- ;
@@ -108,7 +60,11 @@ local function screen_info()
    local layout = awful.layout.get(focused_screen) or nil
    local focused_client = client.focus or nil
 
-   return focused_screen, workarea, selectedtag, layout, focused_client
+   return focused_screen,
+      workarea,
+      selected_tag,
+      layout,
+      focused_client
 end
 
 --------------------------------------------------------- get_regions() -- ;
@@ -132,28 +88,21 @@ local function get_regions()
 
    if layout.machi_get_instance_data then
       machi_fn = layout.machi_get_instance_data
-      machi_data = {machi_fn(focused_screen, selected_tag)}
+      machi_data = {machi_fn(screen[focused_screen], selected_tag)}
       machi_regions = machi_data[3]
    
       for i=#machi_regions,1,-1 do
-          if machi_regions[i].habitable == false  then
-              table.remove(machi_regions, i)
-          end
+         if machi_regions[i].habitable == false  then
+            table.remove(machi_regions, i)
+         end
       end --|remove unhabitable regions
 
       table.sort(
          machi_regions,
          function (a1, a2)
-            local s1 = a1.width * a1.height
-            local s2 = a2.width * a2.height
-            if math.abs(s1 - s2) < 0.01 then
-               return (a1.x + a1.y) < (a2.x + a2.y)
-            else
-               return s1 > s2
-            end
+            return a1.id > a2.id
          end
-      ) --|unlike v1, v2 returns unordered region list and
-        --|needs sorting
+      ) --|v2 returns unordered region list and needs sorting.
    end --|version 2/NG
 
    return machi_regions, machi_fn
@@ -178,27 +127,30 @@ local function move_to(location)
    end
 end
 
--------------------------------------------------- get_active_regions() -- ;
+------------------------------------------------------- get_client_info -- ;
 
-local function get_active_regions()
+local function get_client_info(c)
    local active_region = nil
    local outofboundary = nil
    local proximity = {}
    local regions = get_regions()
+   local source_client = c or client.focus or nil
    
-   if (not regions) then return {} end
+
+   if not regions then return {} end
    --|flow control
 
-   if not client.focus then return {} end
+   if not source_client then return {} end
    --|flow control
 
-   if client.focus.x < 0 or client.focus.y < 0 
+   if source_client.x < 0 or source_client.y < 0 
       then outofboundary = true 
    end --| negative coordinates always mean out of boundary
 
+
    for i, a in ipairs(regions) do
-      local px = a.x - client.focus.x
-      local py = a.y - client.focus.y
+      local px = a.x - source_client.x
+      local py = a.y - source_client.y
 
       if px == 0 then px = 1 end
       if py == 0 then py = 1 end
@@ -215,13 +167,10 @@ local function get_active_regions()
    if not active_region then
       table.sort(proximity, compare)       --| sort to get the smallest area
       active_region = proximity[1].index   --| first item should be the right choice
-      ----┐
-          -- naughty.notify({preset = naughty.config.presets.critical, text=inspect(regions[active_region])})
-          -- naughty.notify({preset = naughty.config.presets.critical, text=tostring(client.focus.width .. " " .. client.focus.height)})
 
-      if client.focus.floating then
-         if regions[active_region].width - client.focus.width ~= 2
-            or regions[active_region].height - client.focus.height ~= 2
+      if source_client.floating then
+         if regions[active_region].width - source_client.width ~= 0
+            or regions[active_region].height - source_client.height ~= 0
          then
             outofboundary = true
          end
@@ -236,41 +185,67 @@ local function get_active_regions()
    end --|at this point, we are out of options, set the index
        --|to one and hope for the best.
 
+
+   -- refactor
+   if active_region and source_client.width > regions[active_region].width then
+      outofboundary = true
+   end --|machi sometimes could auto expand the client, consider
+       --|that as out of boundary.
+
+   if active_region and source_client.height > regions[active_region].height then
+      outofboundary = true
+   end --|machi sometimes could auto expand the client, consider
+       --|that as out of boundary.
+   -- refactor
+
+
    return {
       active_region = active_region,
       regions = regions,
       outofboundary = outofboundary
    }
 end
---|tablist order is adjusted by awesomewm and it will
---|always have the focused client as the first item.
+
+----------------------------------------- focus_by_direction(direction) -- ;
+
+local function focus_by_direction(direction)
+   return function()
+      if not client.focus then return false end
+      awful.client.focus.global_bydirection(direction, nil,true)
+      client.focus:raise()
+   end
+end
 
 ------------------------------------------------------ region_tablist() -- ;
 
-local function region_tablist()
+local function region_tablist(region_ix, c)
    local focused_screen = awful.screen.focused()
    local workarea = awful.screen.focused().workarea
    local selected_tag = awful.screen.focused().selected_tag
    local tablist = {}
-   local active_region = nil
+   local active_region = region_ix or nil
+   local source_client = c or client.focus or nil
 
    local regions = get_regions()
    
-   if (not regions) then return {} end
+   if not regions then return {} end
    --|flow control
 
-   if not client.focus then return {} end
+
+   ------------------ CHECK FOR SIDE EFFECTS
+   -- if not source_client or source_client.floating then return {} end
    --|flow control
 
-   if client.floating then return {} end
-
-   for i, a in ipairs(regions) do
-      if a.x <= client.focus.x and client.focus.x < a.x + a.width and
-         a.y <= client.focus.y and client.focus.y < a.y + a.height
-      then
-         active_region = i
+   if not active_region then
+      for i, a in ipairs(regions) do
+         if a.x <= source_client.x and source_client.x < a.x + a.width and
+            a.y <= source_client.y and source_client.y < a.y + a.height
+         then
+            active_region = i
+         end
       end
-   end --|focused client's region
+   end --|if no region index provided, find the region of the
+       --|focused_client.
 
    for _, tc in ipairs(screen[focused_screen].tiled_clients) do
       if not (tc.floating or tc.immobilized) then
@@ -283,12 +258,6 @@ local function region_tablist()
          end
       end
    end --|tablist inside the active region
-   
-   if tablelength(tablist) == 1 then 
-      return {}
-   end --|flow control: if there is only one client in the
-       --|region, there is nothing to shuffle. having this here
-       --|makes it easier to avoid if nesting later.
 
     return tablist
 end
@@ -309,11 +278,14 @@ local function expand_horizontal(direction)
 
       if c.direction == direction then
          c.direction = nil
+         c.maximized_horizontal = false
+         c.maximized_vertical = false
+         draw_tabbar(c.region)
          return
       end --|reset toggle when sending same shortcut
           --|consequitively
 
-      local stuff = get_active_regions()
+      local stuff = get_client_info()
       local target = grect.get_in_direction(direction, stuff.regions, client.focus:geometry())
       
       if not target and direction ~= "center" then return end -- flow control
@@ -322,7 +294,7 @@ local function expand_horizontal(direction)
       if direction == "right" then
          tobe = {
             x=c.x,
-            width=math.abs(stuff.regions[target].x + stuff.regions[target].width - c.x),
+            width=math.abs(stuff.regions[target].x + stuff.regions[target].width - c.x - 5),
             height=c.height,
             y=c.y
          }
@@ -332,6 +304,8 @@ local function expand_horizontal(direction)
 
          gears.timer.delayed_call(function () 
             client.focus:geometry(tobe)
+            draw_tabbar(c.region)
+            clear_tabbar(c)
          end)
          return
       end
@@ -350,6 +324,8 @@ local function expand_horizontal(direction)
 
          gears.timer.delayed_call(function () 
             client.focus:geometry(tobe)
+            draw_tabbar(c.region)
+            clear_tabbar(c)
          end)
          return
       end
@@ -358,8 +334,10 @@ local function expand_horizontal(direction)
       if direction == "center" then
          c.maximized = false
          c.maximixed_vertical = false
+         fixedchoice = geoms.clients[c.class] or nil
 
          if c.floating then
+            c.maximized_horizontal = false
             geom = geoms.crt43()
          end
 
@@ -368,11 +346,18 @@ local function expand_horizontal(direction)
             c.maximized_horizontal = true
             geom = geoms.p1080()
          end
-         
+
+         if fixedchoice then
+            c.direction = "center"
+            geom = fixedchoice()
+         end
+
          gears.timer.delayed_call(function () 
             client.focus:geometry(geom)
             awful.placement.centered(client.focus)
             client.focus:raise()
+            draw_tabbar(c.region)
+            clear_tabbar(c)
          end) --|give it time in case maximize_horizontal is
               --|adjusted before centering
          return
@@ -382,6 +367,9 @@ end
 --|c.direction is used to create a fake toggling effect.
 --|tiled clients require an internal maximized property to
 --|be set, otherwise they won't budge.
+
+--|change the logic handling for the center layout to use
+--|fixedchoices
 
 ----------------------------------------------------- expand_vertical() -- ;
 
@@ -394,7 +382,7 @@ local function expand_vertical()
       return
    end --|reset toggle maximized state
 
-   local stuff = get_active_regions()
+   local stuff = get_client_info()
    local target = grect.get_in_direction("down", stuff.regions, client.focus:geometry())
    
    if target and stuff.regions[target].x ~= c.x then
@@ -440,179 +428,385 @@ local function expand_vertical()
    return
 end
 
----------------------------------------------------- shift_by_direction -- ;
-
-local function shift_by_direction(direction, swap)
-   return function ()
-      local stuff = get_active_regions()
-      local cltbl = awful.client.visible(client.focus.screen, true)
-
-      local map = {}
-      for a,region in ipairs(stuff.regions) do
-         for i,c in ipairs(cltbl) do
-            if c.x == region.x and c.y == region.y then
-               map[a] = i
-               break --|avoid stacked regions
-            end
-         end
-      end --◸
-          --|client list order we obtain via cltbl changes in
-          --|each invokation, therfore we need to map the
-          --|client table onto the region_list from machi.
-          --|this will give us the region numbers of clients. 
-          --|naughty.notify({text=inspect(map)})
-          --◺
-
-      local target = grect.get_in_direction(direction, stuff.regions, client.focus:geometry())
-      --| awesomewm magic function to find out what lies
-      --| ahead and beyond based on the direction
-
-      if not target then
-         target = stuff.active_region + 1 
-         
-         if target > #stuff.regions then
-            target = stuff.active_region - 1
-         end
-      end --◸
-          --|we bumped into an edge, try to locate region via
-          --|region_index and if that also fails, set back the
-          --|previous region as target clock wise.
-          --|naughty.notify({text=inspect(target)})
-          --|naughty.notify({text=inspect(map[target])})
-          --|naughty.notify({text=inspect(cltbl[map[target]])})
-          --◺
-
-      tobe = stuff.regions[target]
-      is = client.focus:geometry()
-
-      client.focus:geometry(tobe)
-      client.focus:raise()
-      --|relocate
-
-      swapee = cltbl[map[target]]
-      --|try to get client at target region
-
-      if swap and swapee then
-         swapee:geometry(is)
-         swapee:emit_signal("request::activate", "mouse_enter",{raise = true})
-      end
-
-      -- naughty.notify({text=inspect(cltbl[2]:geometry())})
-      -- --◹◿ naughty.notify({text=inspect(cltbl[2]:geometry())})
-   end
-end
-
 ------------------------------------------------------------- shuffle() -- ;
 
 local function shuffle(direction)
    return function()
-      if direction == "backward" then
-         local tablist = region_tablist()
-         local prev_client = nil
+      local tablist = get_tiled_clients()
+      --|this is the ordered list
 
-         for i = #tablist, 1, -1 do
-            prev_client = tablist[i]
-            prev_client:emit_signal("request::activate", "mouse_enter",{raise = true})
-            break --|activate previous client
-         end
+      if not #tablist then return end
+      --▨ flow control
+
+      if not client.focus then return end
+      --▨ flow control
+
+      focused_client_ix = get_client_ix(client.focus.window, tablist)
+      --|find the index position of the focused client
+
+      if not focused_client_ix then return end
+      --▨ flow control
+
+      prev_ix = focused_client_ix - 1
+      next_ix = focused_client_ix + 1
+      --|calculate target indexes
+
+      if next_ix > #tablist then next_ix = 1 end
+      if prev_ix < 1 then prev_ix = #tablist end
+      --|check for validity of the index
+
+      if direction == "backward" then
+         tablist[prev_ix]:emit_signal("request::activate", "mouse_enter",{raise = true})
          return
       end
 
       if direction == "forward" then
-         local tablist = region_tablist()
-         local next_client = nil
-
-         for _, cc in ipairs(tablist) do
-            client.focus:lower()
-            next_client = tablist[_+1]
-            next_client:emit_signal("request::activate", "mouse_enter",{raise = true})
-            break --|activate next client
-         end
+         tablist[next_ix]:emit_signal("request::activate", "mouse_enter",{raise = true})
          return
       end
    end
 end
 
-local function my_shifter(direction)
+---------------------------------------------------------- get_swapee() -- ;
+
+local function get_swapee(target_region_ix)
+   local regions = get_regions()
+   --| all regions
+
+   local cltbl = awful.client.visible(client.focus.screen, true)
+   --| all visible clients on all regions
+   --| but we don't know which regions they are at
+   
+   local swap_map = {}
+
+   for a,region in ipairs(regions) do
+      for i,c in ipairs(cltbl) do
+         if c.x == region.x and c.y == region.y then
+            swap_map[a] = i
+            break --|avoid stacked regions
+         end
+      end
+   end --|iterate over regions, and match the client objects in
+       --|each region.
+
+   local swapee = cltbl[swap_map[target_region_ix]]
+   return swapee
+end
+--[[
+   returns the client object at a specific region. we can
+   also use signals to keep track of this but we are trying
+   to avoid exessive use of signals.
+--]]
+
+---------------------------------------------------------- my_shifter() -- ;
+
+local function my_shifter(direction, swap)
    return function()
 
+      if direction == "left" then direction = "backward" end
+      if direction == "right" then direction = "forward" end
+
+      local c = client.focus
+      local stuff = get_client_info()
+      local client_region_ix = stuff.active_region
+      local source_region
+      local target_region_ix
+      local target_region
+
       if direction == "backward" then
-         local next_client = nil
-         local stuff = get_active_regions()
-         local client_region = stuff.active_region
-         local next_region
-
-         if (client_region + 1 > #stuff.regions) then 
-            next_region=stuff.regions[1]
+         if (client_region_ix + 1) > #stuff.regions then 
+            target_region_ix = 1
          else
-            next_region=stuff.regions[client_region+1]
-         end --|figure out the action
-
-         if stuff.outofboundary then
-            next_region=stuff.regions[client_region]
-         end --|ignore action, and push inside the boundary instead
-
-         client.focus:geometry({
-            x=next_region.x,
-            y=next_region.y,
-            width=next_region.width-2,
-            height=next_region.height-2
-         })
-         return
-      end
+            target_region_ix = client_region_ix+1
+         end
+      end --|go next region by index, 
+          --|if not reset to first
 
       if direction == "forward" then
-      
-         local next_client = nil
-         local stuff = get_active_regions()
-         local client_region = stuff.active_region
-         local previous_region
-
-         if (client_region - 1 < 1) then 
-            previous_region = stuff.regions[#stuff.regions]
+         if (client_region_ix - 1) < 1 then 
+            target_region_ix = #stuff.regions
          else
-            previous_region = stuff.regions[client_region-1]
-         end --|figure out the action
+            target_region_ix = client_region_ix - 1
+         end
+      end --|go previous region by index,
+          --|if not reset to last
 
-         if stuff.outofboundary then
-            previous_region = stuff.regions[client_region]
-         end --|ignore action, and push inside the boundary instead
+      if stuff.outofboundary then
+         target_region_ix = client_region_ix
+      end --|ignore previous when out of boundary
+          --|probably floating or expanded client
+          --|push inside the boundary instead
 
-         client.focus:geometry({
-            x=previous_region.x,
-            y=previous_region.y,
-            width=previous_region.width-2,
-            height=previous_region.height-2
-         })
+      source_region = stuff.regions[client_region_ix]
+      target_region = stuff.regions[target_region_ix]
+      --|target regions geometry
+
+      local swapee = get_swapee(target_region_ix)
+      --|visible client at the target region
+
+      c:geometry(target_region)
+      --|relocate client
+
+      if not swap then c:raise() end
+      --|raise
+
+      if swap and swapee then
+         swapee:geometry(source_region)
+         swapee:emit_signal("request::activate", "mouse_enter",{raise = true})
+      end --|perform swap
+
+      draw_tabbar(target_region_ix)
+      --|update tabs in target region
       
-      end
-
-
+      draw_tabbar(client_region_ix)
+      --|update tabs in source region
    end   
 end
+
+---------------------------------------------------- shift_by_direction -- ;
+
+local function shift_by_direction(direction, swap)
+   return function ()
+
+      local c = client.focus
+      local stuff = get_client_info()
+      local target_region_ix = nil
+      local client_region_ix = stuff.active_region
+
+      if stuff.outofboundary == true then
+         return my_shifter(direction)()
+      end --|my_shifter handles this situation better.
+
+      local candidate = {
+         up = grect.get_in_direction("up", stuff.regions, client.focus:geometry()),
+         down = grect.get_in_direction("down", stuff.regions, client.focus:geometry()),
+         left = grect.get_in_direction("left", stuff.regions, client.focus:geometry()),
+         right = grect.get_in_direction("right", stuff.regions, client.focus:geometry())
+      } --|awesomewm magic function to find out what lies
+        --|ahead and beyond based on the direction
+
+      target_region_ix = candidate[direction]
+      --|try to get a candidate region if possible
+
+      if not target_region_ix then
+         if direction == "right" then try = "left" end
+         if direction == "left" then try = "right" end
+         if direction == "down" then try = "up" end
+         if direction == "up" then try = "down" end
+
+         target_region_ix = go_edge(try, stuff.regions, client.focus:geometry())
+      end --|go the beginning or the end if there is no
+          --|candidate
+
+      
+      source_region = stuff.regions[client_region_ix]
+      target_region = stuff.regions[target_region_ix]
+
+      local swapee = get_swapee(target_region_ix)
+      --|visible client at the target region
+
+      c:geometry(target_region)
+      --|relocate client
+
+      if not swap then c:raise() end
+      --|raise
+
+      if swap and swapee then
+         swapee:geometry(source_region)
+         swapee:emit_signal("request::activate", "mouse_enter",{raise = true})
+      end --|perform swap
+
+      draw_tabbar(target_region_ix)
+      --|update tabs in target region
+      
+      draw_tabbar(client_region_ix)
+      --|update tabs in source region
+   end
+end
+
+----------------------------------------------------- get_tiled_clients -- ;
+
+function get_tiled_clients(region_ix)
+   local tablist = region_tablist(region_ix)
+
+   local all_clients = get_global_clients()
+   local tiled_clients = {}
+   local myorder = {}
+   local window_ix = {}
+
+   for i,t in ipairs(tablist) do
+      window_ix[t.window] = true
+   end
+
+   local po = 1
+   for i,c in pairs(all_clients) do
+      if not c.floating and window_ix[c.window] then
+            tiled_clients[po] = c
+         po = po + 1
+      end
+   end
+
+   return tiled_clients
+end
+--[[+
+   global_client_index stores the ordered list of all clients
+   available and it is used as a blueprint to keep the order
+   of our tablist intact, without this, tabbars would go out
+   of order when user focuses via shortcuts (run_or_raise). ]]
+
+-------------------------------------------------------- draw_tabbar() -- ;
+
+function draw_tabbar(region_ix)
+   local flexlist = tabs.layout()
+   local tablist = get_tiled_clients(region_ix)
+
+   if tablelength(tablist) == 0 then
+      return
+   end --|this should only fire on an empty region
+
+   if tablelength(tablist) == 1 then
+      clear_tabbar(tablist[1])
+      return
+   end --|reset tabbar titlebar when only
+       --|one client is in the region.
+
+   for c_ix, c in ipairs(tablist) do
+      local flexlist = tabs.layout()
+
+      for cc_ix, cc in ipairs(tablist) do
+         local buttons = gears.table.join(awful.button({}, 1, function() end))
+         wid_temp = tabs.create(cc, (cc == c), buttons, c_ix)
+         flexlist:add(wid_temp)
+      end
+
+      local titlebar = awful.titlebar(c, {
+         bg = tabs.bg_normal,
+         size = tabs.size,
+         position = tabs.position,
+      })
+
+      titlebar:setup{layout = wibox.layout.flex.horizontal, flexlist}
+      awful.titlebar(c, {size=8, position = "top"})
+      awful.titlebar(c, {size=0, position = "left"})
+      awful.titlebar(c, {size=0, position = "right"})
+   end
+end
+
+
+------------------------------------------------------ signal helpers -- ;
+
+local function manage_signal(c)
+   if c then
+      global_client_table[c.window] = c
+      --|add window.id to global index
+
+      local active_region = get_client_info(c).active_region
+      if active_region then
+         c.region = active_region
+         draw_tabbar(active_region)
+      end --|in case new client appears tiled
+          --|we must update the regions tabbars.
+   end
+end
+
+local function unmanage_signal(c)
+   if c then
+      global_client_table[c.window] = nil
+      --|remove window.id to global index
+
+      if not c.floating then
+         local active_region = get_client_info(c).active_region
+         if active_region then 
+            draw_tabbar(active_region) end
+      end
+   end
+end
+
+local function selected_tag_signal(t)
+   gears.timer.delayed_call(function() 
+      local regions = get_regions()
+         if regions and #regions then
+            for i, region in ipairs(regions) do
+               draw_tabbar(i)
+            end
+         end
+   end)
+end
+
+local function floating_signal(c)
+   if c.floating then
+      if c.region then
+         clear_tabbar(c)
+         draw_tabbar(c.region)
+      end
+   end --|window became floating
+
+   if not c.floating then
+      local active_region = get_client_info(c).active_region
+      if active_region then
+         c.region = active_region
+         gears.timer.delayed_call(function(active_region)
+            draw_tabbar(active_region)   
+         end, active_region)
+      end
+   end --|window became tiled
+end
+
+--------------------------------------------------------------- signals -- ;
+
+client.connect_signal("property::minimized", function(c)
+   if c.minimized then unmanage_signal(c) end
+   if not c.minimized then manage_signal(c) end 
+end)
+--[[+] manage minimized and not minimized ]]
+
+
+client.connect_signal("property::floating", floating_signal)
+--[[+]
+   when windows switch between float and tiled we must
+   perform necessary maintenance on the destination and
+   source regions. a delayed call was necessary when
+   clients become tiled to give awm enough time to draw the
+   widgets properly.]]
+
+client.connect_signal("unmanage", unmanage_signal) 
+--[[+]
+   when removing a tiled client we must update the tabbars
+   of others. floating clients do not require any cleanup. ]]
+
+client.connect_signal("manage", manage_signal)
+--[[+]
+   global_client_table is the milestone the tabbars rely on.
+   whenever a new client appears we must add to it, and
+   when a client is killed we must make sure it is removed. ]]
+
+tag.connect_signal("property::selected", selected_tag_signal)
+--[[+]
+   property::selected gets called the last, by the time we
+   are here, we already have the global_client_list to draw
+   tabbars. This may appear redundant here, but it's good
+   to have this fire up in case the user switches tags. ]]
 
 --------------------------------------------------------------- exports -- ;
 
 module = {
-   region_tablist = region_tablist,
    focus_by_direction = focus_by_direction,
-   compare = compare,
-   get_active_regions = get_active_regions,
+   get_active_regions = get_client_info,
    shift_by_direction = shift_by_direction,
    expand_horizontal = expand_horizontal,
-   geoms = geoms,
    shuffle = shuffle,
+   old_shuffle = old_shuffle,
    my_shifter = my_shifter,
    expand_vertical = expand_vertical,
    move_to = move_to,
-   toggle_always_on = toggle_always_on
+   get_regions = get_regions,
+   toggle_always_on = toggle_always_on,
+   draw_tabbar = draw_tabbar,
+   get_global_clients = get_global_clients,
+   update_global_clients = update_global_clients,
+   get_client_info = get_client_info,
 }
 
 return module
 
 
-
-
--- naughty.notify({preset = naughty.config.presets.critical,text=inspect(client.focus:geometry())})
--- naughty.notify({preset = naughty.config.presets.critical,text=inspect(regions)})
--- naughty.notify({preset = naughty.config.presets.critical,text=inspect(proximity)})

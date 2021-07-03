@@ -1,21 +1,15 @@
 
 ---------------------------------------------------------- dependencies -- ;
 
--- local inspect = require('inspect')
 local capi = {root=root}
-local gears = require("gears")
-local naughty = require("naughty")
 local awful = require("awful")
 local modkey = "Mod4"
 
-local machina = require('awesomewm-machina.methods')
-local compare = machina.compare
-local region_tablist = machina.region_tablist
+local machina = require("machina.methods")
+local backham = require("machina.backham")
 local focus_by_direction = machina.focus_by_direction
-local get_active_regions = machina.get_active_regions
 local shift_by_direction = machina.shift_by_direction
 local expand_horizontal = machina.expand_horizontal
-local geoms = machina.geoms
 local shuffle = machina.shuffle
 local my_shifter = machina.my_shifter
 local expand_vertical = machina.expand_vertical
@@ -25,61 +19,89 @@ local toggle_always_on = machina.toggle_always_on
 ---------------------------------------------------------- key bindings -- ;
 
 local bindings = {
+   awful.key({modkey}, "[", my_shifter("backward")),
+   awful.key({modkey}, "]", my_shifter("forward")),
+   --▨ move
+
+   awful.key({modkey, "Shift"}, "[", my_shifter("backward", "swap")),
+   awful.key({modkey, "Shift"}, "]", my_shifter("forward", "swap")),
+   --▨ swap
+
    awful.key({modkey}, ";", shuffle("backward")),
    awful.key({modkey}, "'", shuffle("forward")),
-   --▨ shuffle decks
+   --▨ shuffle
+
+   awful.key({modkey}, "j", focus_by_direction("left")),
+   awful.key({modkey}, "k", focus_by_direction("down")),
+   awful.key({modkey}, "l", focus_by_direction("right")),
+   awful.key({modkey}, "i", focus_by_direction("up")),
+   --▨ focus
 
    awful.key({modkey, "Shift"}, "j", shift_by_direction("left")),
    awful.key({modkey, "Shift"}, "l", shift_by_direction("right")),
    awful.key({modkey, "Shift"}, "k", shift_by_direction("down")),
    awful.key({modkey, "Shift"}, "i", shift_by_direction("up")),
-   --▨ move (directional)
+   --▨ move
 
-   awful.key({modkey}, "[", my_shifter("backward")),
-   awful.key({modkey}, "]", my_shifter("forward")),
-   --▨ move (clockwise)
+   awful.key({modkey, "Control"}, "j", shift_by_direction("left", "swap")),
+   awful.key({modkey, "Control"}, "l", shift_by_direction("right", "swap")),
+   awful.key({modkey, "Control"}, "k", shift_by_direction("down", "swap")),
+   awful.key({modkey, "Control"}, "i", shift_by_direction("up","swap")),
+   --▨ swap
 
-   awful.key({modkey, "Shift"}, "Insert", move_to("top-left")),
-   awful.key({modkey, "Shift"}, "Page_Up", move_to("top-right")),
-   awful.key({modkey, "Shift"}, "Home", move_to("center")),
-   awful.key({modkey, "Shift"}, "End", toggle_always_on),
-   awful.key({modkey, "Shift"}, "Delete", move_to("bottom-left")),
-   awful.key({modkey, "Shift"}, "Page_Down", move_to("bottom-right")),
-   --▨ move (positional)
-
-   awful.key({modkey, "Shift"  }, "[", shift_by_direction("left", true)),
-   awful.key({modkey, "Shift"  }, "]", shift_by_direction("right", true)),
-   awful.key({modkey, "Control"}, "[", shift_by_direction("down", true)),
-   awful.key({modkey, "Control"}, "]", shift_by_direction("up", true)),
-   --▨ swap (directional)
-
-   awful.key({modkey}, "Insert", expand_horizontal("left")),
-   awful.key({modkey}, "Page_Up", expand_horizontal("right")),
-   awful.key({modkey}, "Home", expand_horizontal("center")),
-   awful.key({modkey}, "Page_Down", expand_vertical),
+   awful.key({modkey, "Shift"}, "Insert", expand_horizontal("left")),
+   awful.key({modkey, "Shift"}, "Page_Up", expand_horizontal("right")),
+   awful.key({modkey, "Shift"}, "Page_Down", expand_vertical),
    --▨ expand (neighbor)
 
+   awful.key({modkey}, "Insert", move_to("top-left")),
+   awful.key({modkey}, "Page_Up", move_to("top-right")),
+   awful.key({modkey}, "Delete", move_to("bottom-left")),
+   awful.key({modkey}, "Page_Down", move_to("bottom-right")),
+   --▨ move (positional)
+
+   awful.key({modkey}, "Home", expand_horizontal("center")),
    awful.key({modkey}, "End", function() 
       client.focus.maximized_vertical = false
       client.focus.maximized_horizontal = false
       awful.client.floating.toggle()
    end), --|toggle floating status
 
+   awful.key({modkey, "Shift"}, "End", toggle_always_on),
+   awful.key({modkey, "Shift"}, "Home", move_to("center")),
+
+   awful.key({modkey,}, "o", function ()
+      c = client.focus
+      if not c then return true end
+
+      if not c.floating then
+         c:geometry({width=300, height=300})
+      end --|to avoid machi's auto expansion
+
+      c:move_to_screen()
+      gears.timer.delayed_call(function () 
+         c:emit_signal("request::activate", "mouse_enter",{raise = true})
+      end)
+   end), --|client teleport to other screen
+
    awful.key({modkey}, "Left", focus_by_direction("left")),
-   awful.key({modkey}, "j", focus_by_direction("left")),
-
    awful.key({modkey}, "Down", focus_by_direction("down")),
-   awful.key({modkey}, "k", focus_by_direction("down")),
-
    awful.key({modkey}, "Right", focus_by_direction("right")),
-   awful.key({modkey}, "l", focus_by_direction("right")),
-
    awful.key({modkey}, "Up", focus_by_direction("up")),
-   awful.key({modkey}, "i", focus_by_direction("up"))
    --▨ focus
 }
 
 --------------------------------------------------------------- signals -- ;
+
+client.connect_signal("manage", function(c)
+   c.maximized = false
+   c.maximized_horizontal = false
+   c.maximized_vertical = false
+end) --|during reload maximized clients get messed up, as machi
+     --|also tries to best fit the windows. this resets the
+     --|maximized state during a reload problem is with our hack
+     --|to use maximized, we should look into using machi
+     --|resize_handler instead
 
 client.connect_signal("request::activate", function(c) 
    c.hidden = false
@@ -88,7 +110,8 @@ client.connect_signal("request::activate", function(c)
 end) --|this is needed to ensure floating stuff becomes
      --|visible when invoked through run_or_raise.
 
-client.connect_signal("focus", function(c) 
+client.connect_signal("focus", function(c)
+if not (c.bypass or c.always_on) then
    if not c.floating then
       for _, tc in ipairs(screen[awful.screen.focused()].all_clients) do
          if tc.floating and not tc.always_on then
@@ -106,9 +129,14 @@ client.connect_signal("focus", function(c)
       end
       return
    end
-end) --|hide all floating windows when the user switches to a
-     --|tiled client. this is handy when you have a floating
-     --|browser open. unless, client is set to always_on.
+end
+end) 
+--[[+]
+   hide all floating windows when the user switches to a tiled
+   client. This is handy when you have a floating browser
+   open. Unless, client is set to always_on or bypass through
+   rules. ]]
+
 
 --------------------------------------------------------------- exports -- ;
 
@@ -122,9 +150,3 @@ local function new(arg)
 end
 
 return setmetatable(module, { __call = function(_,...) return new({...}) end })
-
-
--- return module
-----------------╮
---▨ FOCUS      ▨
-----------------╯
