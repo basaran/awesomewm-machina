@@ -750,6 +750,47 @@ end
 
 -------------------------------------------------------- draw_tabbar() -- ;
 
+local widget_ix = {}
+
+-- client.connect_signal("property::name", function (c)
+--    -- todo: need to update the other clients in the region here as well
+      -- this may not even be worth it as the client names kind of pollute the
+      -- tabs a lot making it harder to distinguish what is what.
+
+--    if widget_ix[c.window] then
+--       for i, p in pairs(widget_ix[c.window]) do
+--          if p.focused then
+--             widget = widget_ix[c.window][i]:get_children_by_id(c.window)[1]
+--             -- naughty.notify({preset = naughty.config.presets.critical, text=inspect(widget)})
+--             widget.widget.markup = c.name
+--          end
+--       end
+--    end
+-- end)
+
+
+client.connect_signal("focus", function (c)
+   if widget_ix[c.window] then
+      for i, p in pairs(widget_ix[c.window]) do
+         if p.focused then
+            widget = widget_ix[c.window][i]:get_children_by_id(c.window)[1]
+            widget.bg = "#43417a"
+         end
+      end
+   end
+end)
+
+client.connect_signal("unfocus", function (c)
+   if widget_ix[c.window] then
+      for i, p in pairs(widget_ix[c.window]) do
+         if p.focused then
+            widget = widget_ix[c.window][i]:get_children_by_id(c.window)[1]
+            widget.bg = "#292929"
+         end
+      end
+   end
+end)
+
 function draw_tabbar(region_ix)
    local flexlist = tabs.layout()
    local tablist = get_tiled_clients(region_ix)
@@ -766,11 +807,14 @@ function draw_tabbar(region_ix)
 
    for c_ix, c in ipairs(tablist) do
       local flexlist = tabs.layout()
+      widget_ix[c.window] = {}
 
       for cc_ix, cc in ipairs(tablist) do
          local buttons = gears.table.join(awful.button({}, 1, function() end))
-         wid_temp = tabs.create(cc, (cc == c), buttons, c_ix)
-         flexlist:add(wid_temp)
+         -- wid_temp
+         widget_ix[c.window][cc_ix] = tabs.create(cc, (cc == c), buttons, c_ix)
+
+         flexlist:add(widget_ix[c.window][cc_ix])
          flexlist.max_widget_size = 120
       end
 
@@ -881,6 +925,15 @@ client.connect_signal("property::floating", floating_signal)
 
 client.connect_signal("tabbar_draw", draw_tabbar)
 --[[+] experimental signalling ]]
+
+-- client:connect_signal("property::name", function(c)
+--    if widget_ix[c.window] then
+--       local widget = widget_ix[c.window]:get_children_by_id(c.window)
+
+--       text_temp.markup = "<span foreground='" .. fg_temp .. "'>" .. title_temp.. "</span>"
+--    end
+-- end)
+
 
 client.connect_signal("unmanage", unmanage_signal) 
 --[[+]

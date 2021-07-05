@@ -25,9 +25,14 @@ local function create(c, focused_bool, buttons, idx)
     local fg_temp = fg_normal
 
     if focused_bool then 
-        bg_temp = bg_active
+        bg_temp = bg_focus
         fg_temp = fg_focus
     end
+
+    if client.focus == c and focused_bool  then
+        bg_temp = bg_active
+    end --|when the client is maximized and then minimized, bg
+        --|color should be active
 
     local text_temp = wibox.widget.textbox()
 
@@ -41,10 +46,11 @@ local function create(c, focused_bool, buttons, idx)
     if focused_bool then text_temp.focused = true end
 
     local wid_temp = wibox.widget({
-        id = c.window..idx,
+        id = c.window,
         text_temp,
         buttons = buttons,
         bg = bg_temp,
+        focused = focused_bool,
         widget = wibox.container.background()
     })
 
