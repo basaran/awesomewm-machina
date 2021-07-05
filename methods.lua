@@ -16,7 +16,7 @@ local clear_tabbar = helpers.clear_tabbar
 ---------------------------------------------------------------- locals -- ;
 
 local global_client_table = {}
-local global_tab_table = {}
+local global_widget_table = {}
 
 function get_global_clients()
    return global_client_table
@@ -767,10 +767,10 @@ end
 
 
 client.connect_signal("focus", function (c)
-   if global_tab_table[c.window] then
-      for i, p in pairs(global_tab_table[c.window]) do
+   if global_widget_table[c.window] then
+      for i, p in pairs(global_widget_table[c.window]) do
          if p.focused then
-            local widget = global_tab_table[c.window][i]:get_children_by_id(c.window)[1]
+            local widget = global_widget_table[c.window][i]:get_children_by_id(c.window)[1]
             widget.bg = "#43417a"
          end
       end
@@ -778,8 +778,8 @@ client.connect_signal("focus", function (c)
 end)
 
 client.connect_signal("unfocus", function (c)
-   if global_tab_table[c.window] then
-      for i, p in pairs(global_tab_table[c.window]) do
+   if global_widget_table[c.window] then
+      for i, p in pairs(global_widget_table[c.window]) do
          if p.focused then
             p.bg = "#292929"
             break
@@ -806,14 +806,14 @@ function draw_tabbar(region_ix, s)
 
    for cl_ix, cl in ipairs(tablist) do
       local flexlist = tabs.layout()
-      global_tab_table[cl.window] = {}
+      global_widget_table[cl.window] = {}
 
       for cc_ix, cc in ipairs(tablist) do
          local buttons = gears.table.join(awful.button({}, 1, function() end))
          -- wid_temp
-         global_tab_table[cl.window][cc_ix] = tabs.create(cc, (cc == cl), buttons, cl_ix)
+         global_widget_table[cl.window][cc_ix] = tabs.create(cc, (cc == cl), buttons, cl_ix)
 
-         flexlist:add(global_tab_table[cl.window][cc_ix])
+         flexlist:add(global_widget_table[cl.window][cc_ix])
          flexlist.max_widget_size = 120
       end
 
@@ -881,7 +881,7 @@ end
 local function manage_signal(c)
    if c then
       global_client_table[c.window] = c
-      --|add window.id to global index
+      --|add window.id to client index
 
       local active_region = get_client_info(c).active_region
       if active_region then
@@ -898,7 +898,10 @@ end
 local function unmanage_signal(c)
    if c then
       global_client_table[c.window] = nil
-      --|remove window.id to global index
+      --|remove window.id from client index
+
+      global_widget_table[c.window] = nil
+      --|remove window.id from widget index
 
       if not c.floating then
          local active_region = get_client_info(c).active_region
@@ -910,11 +913,10 @@ end
 
 local function selected_tag_signal(t)
    -- gears.timer.delayed_call(function(t)
-      log(t.name)
       local regions = get_regions()
          if regions and #regions then
             for i, region in ipairs(regions) do
-               draw_tabbar(i)
+               draw_tabbar(i, tag.screen)
             end
          end
    -- end,t)
