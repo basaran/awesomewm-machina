@@ -62,7 +62,7 @@ git clone https://github.com/basaran/awesomewm-machina machina
 and call it from your `rc.lua`
 
 ```lua
-local machina = require('awesomewm-machina')()
+local machina = require('machina')()
 ```
 
 ### Keybindings

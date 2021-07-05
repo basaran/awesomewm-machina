@@ -54,37 +54,35 @@ local bindings = {
    awful.key({modkey, "Control"}, "i", shift_by_direction("up","swap")),
    --▨ swap
 
+   awful.key({modkey}, "Insert", move_to("top-left")),
+   awful.key({modkey}, "Delete", move_to("bottom-left")),
+   awful.key({modkey}, "Home", expand_horizontal("center")),
+   awful.key({modkey}, "Page_Up", move_to("top-right")),
+   awful.key({modkey}, "Page_Down", move_to("bottom-right")),
+   --▨ move (positional)
+
    awful.key({modkey, "Shift"}, "Insert", expand_horizontal("left")),
+   awful.key({modkey, "Shift"}, "End", toggle_always_on),
+   awful.key({modkey, "Shift"}, "Home", move_to("center")),
    awful.key({modkey, "Shift"}, "Page_Up", expand_horizontal("right")),
    awful.key({modkey, "Shift"}, "Page_Down", expand_vertical),
    --▨ expand (neighbor)
 
-   awful.key({modkey}, "Insert", move_to("top-left")),
-   awful.key({modkey}, "Page_Up", move_to("top-right")),
-   awful.key({modkey}, "Delete", move_to("bottom-left")),
-   awful.key({modkey}, "Page_Down", move_to("bottom-right")),
-   --▨ move (positional)
-
-   awful.key({modkey}, "Home", expand_horizontal("center")),
    awful.key({modkey}, "End", function() 
       client.focus.maximized_vertical = false
       client.focus.maximized_horizontal = false
       awful.client.floating.toggle()
    end), --|toggle floating status
 
-   awful.key({modkey, "Shift"}, "End", toggle_always_on),
-   awful.key({modkey, "Shift"}, "Home", move_to("center")),
-
-   -- awful.key({mondkey}, "u", )   
-   awful.key({modkey,}, "o", function(c) 
-   naughty.notify({text=inspect(client.focus.screen)})
-   end), --|client teleport to other screen
 
    awful.key({modkey}, "Left", focus_by_direction("left")),
    awful.key({modkey}, "Down", focus_by_direction("down")),
    awful.key({modkey}, "Right", focus_by_direction("right")),
    awful.key({modkey}, "Up", focus_by_direction("up")),
    --▨ focus
+
+   awful.key({modkey,}, "o", teleport_client), --|client teleport to other screen
+
 }
 
 --------------------------------------------------------------- signals -- ;

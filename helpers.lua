@@ -30,6 +30,16 @@ end --|
     --|reasons in case we need this again.
 
 
+local function clear_tabbar(c, position)
+   if not c then return end
+   local position = position or "bottom"
+   local titlebar = awful.titlebar(c, {size=3, position=position})
+   titlebar:setup{
+      layout=wibox.layout.flex.horizontal, nil
+   }
+end --|clears bottom tabbar
+
+
 local function reload(m)
   if package.loaded[m] then
     local attrs = {}
@@ -93,36 +103,5 @@ return {
     getlowest = getlowest,
     get_client_ix = get_client_ix,
     reload = reload,
-    -- clear_tabbar = clear_tabbar
+    clear_tabbar = clear_tabbar
 }
-
-
-
-
-
-
-
-
-       -- d:connect_signal("focus", function(_)
-       -- local poo = awful.titlebar(d, {position="bottom", size="14"})
-       -- -- local dee = poo.get_all_children({"335544341"})
-       -- local dee = poo:get_children_by_id("335544341")
-
-       --     file = io.open("/tmp/lua.txt", "w")
-       --     io.output(file)
-       --     io.write(inspect(poo))
-       --     io.close(file)
-         
-       --   naughty.notify({text=inspect(dee)})
-       -- end)
-
-
-      -- -- gears.timer.delayed_call(function (d)
-      -- --    -- local active_region = get_client_region(d)
-      -- --    naughty.notify({text="here"})
-
-      -- --    if active_region then
-      -- --       c.region = active_region
-      -- --       draw_tabbar(active_region)   
-      -- --    end
-      -- -- end, c)

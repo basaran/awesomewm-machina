@@ -26,21 +26,6 @@ function update_global_clients(c)
    global_client_table[c.window] = c
 end
 
-function log(m,context)
-   context = context or ""
-   naughty.notify({text=inspect(m) .. " :" .. context })
-end
-
-local function clear_tabbar(c, position)
-   if not c then return end
-   local position = position or "bottom"
-   local titlebar = awful.titlebar(c, {size=3, position=position})
-   titlebar:setup{
-      layout=wibox.layout.flex.horizontal, nil
-   }
-end --|clears bottom tabbar
-
-
 ------------------------------------------------------------- go_edge() -- ;
 
 local function go_edge(direction, regions, current_box)
@@ -149,15 +134,12 @@ end
 ------------------------------------------------------- get_client_info -- ;
 
 local function get_client_info(c)
+   local c = c or client.focus or nil
+   local s = s or c.screen or nil
+   local source_client = c
    local active_region = nil
    local outofboundary = nil
    local proximity = {}
-   local regions = get_regions()
-   local source_client = c or client.focus or nil
-   
-
-   if not regions then return {} end
-   --|flow control
 
    if not source_client then return {} end
    --|flow control
@@ -166,6 +148,11 @@ local function get_client_info(c)
       then outofboundary = true 
    end --| negative coordinates always mean out of boundary
 
+   local regions = get_regions(s)
+   --|get regions on the screen
+   
+   if not regions then return {} end
+   --|flow control
 
    for i, a in ipairs(regions) do
       local px = a.x - source_client.x
@@ -238,10 +225,11 @@ end
 ------------------------------------------------------ region_tablist() -- ;
 
 local function test_tablist(region_ix, c, s)
+   local s = s or c.screen or awful.screen.focused()
    local source_client = c or client.focus or nil
-   local source_screen = (source_client and source_client.screen) or s or awful.screen.focused()
+   local source_screen = s or (source_client and source_client.screen)
    local active_region = region_ix or nil
-   local regions = get_regions(source_screen)
+   local regions = get_regions(s)
    local all_client = get_global_clients()
    local region_clients = {}
 
@@ -256,8 +244,6 @@ local function test_tablist(region_ix, c, s)
    end --|if no region index provided, find the region of the
        --|focused_client.
 
-
-   
    for i, cc in pairs(all_client) do
       if cc.region == active_region and regions[active_region].x == cc.x 
          and regions[active_region].y == cc.y
@@ -267,27 +253,15 @@ local function test_tablist(region_ix, c, s)
    end
 
     return region_clients
-
 end
 
-
-local function region_tablist(region_ix, c)
-   local focused_screen = awful.screen.focused()
-   local workarea = awful.screen.focused().workarea
-   local selected_tag = awful.screen.focused().selected_tag
-   local tablist = {}
-   local active_region = region_ix or nil
+local function pest_tablist(region_ix, c, s)
+   local s = s or c.screen or awful.screen.focused()
    local source_client = c or client.focus or nil
-
-   local regions = get_regions()
-   
-   if not regions then return {} end
-   --|flow control
-
-
-   ------------------ CHECK FOR SIDE EFFECTS
-   -- if not source_client or source_client.floating then return {} end
-   --|flow control
+   local source_screen = s or (source_client and source_client.screen)
+   local active_region = region_ix or nil
+   local regions = get_regions(s)
+   local tablist = {}
 
    if not active_region then
       for i, a in ipairs(regions) do
@@ -300,19 +274,31 @@ local function region_tablist(region_ix, c)
    end --|if no region index provided, find the region of the
        --|focused_client.
 
-   for _, tc in ipairs(screen[focused_screen].tiled_clients) do
-      if not (tc.floating or tc.immobilized) then
-         if regions[active_region].x <= tc.x + tc.width + tc.border_width * 2 and
-            tc.x <= regions[active_region].x + regions[active_region].width  and
-            regions[active_region].y <= tc.y + tc.height + tc.border_width * 2  and
-            tc.y <= regions[active_region].y + regions[active_region].height 
+   -- for _, tc in ipairs(s.clients) do
+   --    if not (tc.floating) then
+   --       if regions[active_region].x <= tc.x + tc.width + tc.border_width * 2 and
+   --          tc.x <= regions[active_region].x + regions[active_region].width  and
+   --          regions[active_region].y <= tc.y + tc.height + tc.border_width * 2  and
+   --          tc.y <= regions[active_region].y + regions[active_region].height 
+   --       then
+   --          tablist[#tablist + 1] = tc
+   --       end
+   --    end
+   -- end --|tablist inside the active region
+   -- --|this will create issues with overflowing clients such as the ones
+   -- --|expanded to center or anything intersecting for that matter.
+
+   for _, tc in ipairs(s.clients) do
+      if not (tc.floating) then
+         if math.abs(regions[active_region].x - tc.x) <= 5  and
+            math.abs(regions[active_region].y - tc.y) <= 5
          then
             tablist[#tablist + 1] = tc
          end
       end
    end --|tablist inside the active region
 
-    return tablist
+   return tablist
 end
 --|tablist order is adjusted by awesomewm and it will
 --|always have the focused client as the first item.
@@ -357,18 +343,6 @@ local function expand_horizontal(direction)
          c.maximized_horizontal = true
          c.maximixed_vertical = false
 
-         -- if not c.floating then
-         --    awful.layout.get(focused_screen).machi_zort(c, tobe)
-         --    instance_data = awful.layout.get(
-         --       awful.screen.focused())
-         --       .machi_get_instance_data(awful.screen.focused(), awful.screen.selected_tag)
-         --       naughty.notify({text=inspect(instance_data)})
-
-         --    instance_data[c] = {
-         --       lu=0, rd=0
-         --    }
-         -- end
-   
          gears.timer.delayed_call(function (c) 
             c:geometry(tobe)
             draw_tabbar(c.region)
@@ -437,9 +411,6 @@ end
 --|c.direction is used to create a fake toggling effect.
 --|tiled clients require an internal maximized property to
 --|be set, otherwise they won't budge.
-
---|change the logic handling for the center layout to use
---|fixedchoices
 
 ----------------------------------------------------- expand_vertical() -- ;
 
@@ -719,7 +690,7 @@ end
 
 function get_tiled_clients(region_ix, s)
    local s = s or awful.screen.focused()
-   local tablist = test_tablist(region_ix, c, s)
+   local tablist = pest_tablist(region_ix, c, s)
    local all_clients = get_global_clients()
    local tiled_clients = {}
    local myorder = {}
@@ -844,36 +815,39 @@ function resize_region(region_ix, geom, reset)
    end
 end
 
-local function teleport_client(c)
-   -- todo: need to recalculate tabs and also update c.region
-   local cl = c or client.focus
-   if not cl then return true end
+local function teleport_client(c,s)
+   local c = c or client.focus
+   local s = s or c.screen or awful.screen.focused()
 
+   if not c then return true end
+   --|flow control
 
    local is = {
-      region=cl.region or get_client_info(c).active_region,
-      geom=cl:geometry(),
-      screen=cl.screen.index
-   }
+      region=c.region or get_client_info(c).active_region,
+      geom=c:geometry(),
+      screen=c.screen
+   } --|parameters before teleport
 
-   if not cl.floating then
-      cl:geometry({width=300, height=300})
-   end --|to avoid machi's auto expansion
+   -- log(is)
 
+   if not c.floating then
+      c:geometry({width=300, height=300})
+   end --|to avoid machi's auto expansion (lu,rd) of tiled
+       --|clients, resize them temporarily. they will be auto
+       --|expanded to the region anyway.
 
-   cl:move_to_screen()
-   local new_region = get_client_info(c).active_region
+   c:move_to_screen()
+   --|teleport
 
-   if not new_region then
-      c.region = nil
-   end
-
-   gears.timer.delayed_call(function (cl) 
-      
-      -- clear_tabbar(cl)
-      cl:emit_signal("request::activate", "mouse_enter",{raise = true})
-      cl:emit_signal("draw_tabbar", new_region)
-   end,cl)
+   gears.timer.delayed_call(function (c) 
+      local tobe = {
+         region=get_client_info(c).active_region,
+      }
+      c.region = tobe.region
+      draw_tabbar(c.region, c.screen )
+      draw_tabbar(is.region, is.screen )
+      c:emit_signal("request::activate", "mouse_enter",{raise = true})
+   end,c)
 end
 
 ------------------------------------------------------ signal helpers -- ;
@@ -884,9 +858,10 @@ local function manage_signal(c)
       --|add window.id to client index
 
       local active_region = get_client_info(c).active_region
+
       if active_region then
-         c.region = active_region
          gears.timer.delayed_call(function(region, screen)
+            c.region = active_region
             draw_tabbar(region, screen)
          end, active_region, c.screen)
          
@@ -912,14 +887,14 @@ local function unmanage_signal(c)
 end
 
 local function selected_tag_signal(t)
-   -- gears.timer.delayed_call(function(t)
-      local regions = get_regions()
+   gears.timer.delayed_call(function(t)
+      local regions = get_regions(t.screen)
          if regions and #regions then
             for i, region in ipairs(regions) do
-               draw_tabbar(i, tag.screen)
+               draw_tabbar(i, t.screen)
             end
          end
-   -- end,t)
+   end,t)
 end
 
 local function floating_signal(c)
@@ -928,6 +903,7 @@ local function floating_signal(c)
          gears.timer.delayed_call(function(active_region)
             clear_tabbar(c)
             draw_tabbar(c.region)
+            c.region = nil --| check for side effects
          end, active_region)
       end
    end --|window became floating
@@ -966,11 +942,9 @@ client.connect_signal("tabbar_draw", draw_tabbar)
 -- client:connect_signal("property::name", function(c)
 --    if widget_ix[c.window] then
 --       local widget = widget_ix[c.window]:get_children_by_id(c.window)
-
 --       text_temp.markup = "<span foreground='" .. fg_temp .. "'>" .. title_temp.. "</span>"
 --    end
 -- end)
-
 
 client.connect_signal("unmanage", unmanage_signal) 
 --[[+]
