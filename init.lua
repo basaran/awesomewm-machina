@@ -19,12 +19,16 @@ local toggle_always_on = machina.toggle_always_on
 ---------------------------------------------------------- key bindings -- ;
 
 local bindings = {
-   awful.key({modkey}, "[", my_shifter("backward")),
-   awful.key({modkey}, "]", my_shifter("forward")),
+   awful.key({modkey}, "[", shuffle("backward")),
+   awful.key({modkey}, "]", shuffle("forward")),
+   --▨ shuffle
+
+   awful.key({modkey, "Shift"}, "[", my_shifter("backward")),
+   awful.key({modkey, "Shift"}, "]", my_shifter("forward")),
    --▨ move
 
-   awful.key({modkey, "Shift"}, "[", my_shifter("backward", "swap")),
-   awful.key({modkey, "Shift"}, "]", my_shifter("forward", "swap")),
+   awful.key({modkey, "Control"}, "[", my_shifter("backward", "swap")),
+   awful.key({modkey, "Control"}, "]", my_shifter("forward", "swap")),
    --▨ swap
 
    awful.key({modkey}, ";", shuffle("backward")),
@@ -70,6 +74,7 @@ local bindings = {
    awful.key({modkey, "Shift"}, "End", toggle_always_on),
    awful.key({modkey, "Shift"}, "Home", move_to("center")),
 
+   -- awful.key({mondkey}, "u", )   
    awful.key({modkey,}, "o", function ()
       c = client.focus
       if not c then return true end

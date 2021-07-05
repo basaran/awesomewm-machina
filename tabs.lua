@@ -30,6 +30,7 @@ local function create(c, focused_bool, buttons, idx)
     end
 
     local text_temp = wibox.widget.textbox()
+
     text_temp.align = "center"
     text_temp.valign = "center"
     text_temp.wrap = "word"

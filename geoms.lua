@@ -66,6 +66,7 @@ end
 geoms.clients = {
    Subl=geoms.p1080,
    Byobu=geoms.p720,
+   Krom=geoms.crt43,
 }
 
 return geoms

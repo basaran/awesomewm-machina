@@ -83,17 +83,6 @@ local function get_client_ix(id, ids)
    end
 end --|finds out where id is located inside ids.
 
-local function clear_tabbar(c, position)
-   if not c then return end
-   
-   position = position or "bottom"
-   local titlebar = awful.titlebar(c, {size=3, position=position})
-   awful.titlebar(c, {size=0, position="left"})
-   awful.titlebar(c, {size=0, position="right"})
-   titlebar:setup{
-      layout=wibox.layout.flex.horizontal, nil
-   }
-end --|clears bottom tabbar
 
 -------------------------------------------------------------- exports -- ;
 
@@ -104,7 +93,7 @@ return {
     getlowest = getlowest,
     get_client_ix = get_client_ix,
     reload = reload,
-    clear_tabbar = clear_tabbar
+    -- clear_tabbar = clear_tabbar
 }
 
 

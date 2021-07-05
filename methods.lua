@@ -25,6 +25,25 @@ function update_global_clients(c)
    global_client_table[c.window] = c
 end
 
+function log(m,context)
+   naughty.notify({text=inspect(m) .. " :" .. context })
+end
+
+local function clear_tabbar(c, position)
+   -- log(position, " clear_tab_bar_invoked ")
+
+   if not c then return end
+   
+   position = position or "bottom"
+   local titlebar = awful.titlebar(c, {size=3, position=position})
+   awful.titlebar(c, {size=0, position="left"})
+   awful.titlebar(c, {size=0, position="right"})
+   titlebar:setup{
+      layout=wibox.layout.flex.horizontal, nil
+   }
+end --|clears bottom tabbar
+
+
 ------------------------------------------------------------- go_edge() -- ;
 
 local function go_edge(direction, regions, current_box)
@@ -88,6 +107,7 @@ local function get_regions()
 
    if layout.machi_get_instance_data then
       machi_fn = layout.machi_get_instance_data
+      machi_geom = layout.machi_set_geometry
       machi_data = {machi_fn(screen[focused_screen], selected_tag)}
       machi_regions = machi_data[3]
    
@@ -218,6 +238,43 @@ end
 
 ------------------------------------------------------ region_tablist() -- ;
 
+local function test_tablist(region_ix, c)
+   local focused_screen = awful.screen.focused()
+   local workarea = awful.screen.focused().workarea
+   local selected_tag = awful.screen.focused().selected_tag
+   local tablist = {}
+   local active_region = region_ix or nil
+   local source_client = c or client.focus or nil
+   local regions = get_regions()
+   
+   all_client = get_global_clients()
+
+   if not active_region then
+      for i, a in ipairs(regions) do
+         if a.x <= source_client.x and source_client.x < a.x + a.width and
+            a.y <= source_client.y and source_client.y < a.y + a.height
+         then
+            active_region = i
+         end
+      end
+   end --|if no region index provided, find the region of the
+       --|focused_client.
+
+
+   region_clients = {}
+   for i, cc in pairs(all_client) do
+      if cc.region == active_region and regions[active_region].x == cc.x 
+         and regions[active_region].y == cc.y
+         then
+         region_clients[#region_clients + 1] = cc
+      end
+   end
+
+    return region_clients
+
+end
+
+
 local function region_tablist(region_ix, c)
    local focused_screen = awful.screen.focused()
    local workarea = awful.screen.focused().workarea
@@ -281,6 +338,7 @@ local function expand_horizontal(direction)
          c.maximized_horizontal = false
          c.maximized_vertical = false
          draw_tabbar(c.region)
+         resize_region(c.region, c:geometry(), true)
          return
       end --|reset toggle when sending same shortcut
           --|consequitively
@@ -294,19 +352,33 @@ local function expand_horizontal(direction)
       if direction == "right" then
          tobe = {
             x=c.x,
-            width=math.abs(stuff.regions[target].x + stuff.regions[target].width - c.x - 5),
+            width=math.abs(stuff.regions[target].x + stuff.regions[target].width - c.x - 4),
             height=c.height,
             y=c.y
          }
+
          c.direction = direction
          c.maximized_horizontal = true
          c.maximixed_vertical = false
 
-         gears.timer.delayed_call(function () 
-            client.focus:geometry(tobe)
+         -- if not c.floating then
+         --    awful.layout.get(focused_screen).machi_zort(c, tobe)
+         --    instance_data = awful.layout.get(
+         --       awful.screen.focused())
+         --       .machi_get_instance_data(awful.screen.focused(), awful.screen.selected_tag)
+         --       naughty.notify({text=inspect(instance_data)})
+
+         --    instance_data[c] = {
+         --       lu=0, rd=0
+         --    }
+         -- end
+   
+         gears.timer.delayed_call(function (c) 
+            c:geometry(tobe)
             draw_tabbar(c.region)
-            clear_tabbar(c)
-         end)
+            resize_region(c.region, tobe, {horizontal=true,vertical=false,direction=direction})
+            -- clear_tabbar(c)
+         end,c)
          return
       end
 
@@ -322,11 +394,11 @@ local function expand_horizontal(direction)
          c.maximized_horizontal = true
          c.maximixed_vertical = false
 
-         gears.timer.delayed_call(function () 
+         gears.timer.delayed_call(function (c) 
             client.focus:geometry(tobe)
             draw_tabbar(c.region)
             clear_tabbar(c)
-         end)
+         end,c)
          return
       end
      
@@ -349,16 +421,18 @@ local function expand_horizontal(direction)
 
          if fixedchoice then
             c.direction = "center"
+            c.maximized_horizontal = true
             geom = fixedchoice()
          end
 
-         gears.timer.delayed_call(function () 
-            client.focus:geometry(geom)
-            awful.placement.centered(client.focus)
-            client.focus:raise()
-            draw_tabbar(c.region)
+         c:geometry(geom)
+         awful.placement.centered(c)
+
+         gears.timer.delayed_call(function (c)
+            c:raise()
+            client.emit_signal("tabbar_draw", c.region)
             clear_tabbar(c)
-         end) --|give it time in case maximize_horizontal is
+         end,c) --|give it time in case maximize_horizontal is
               --|adjusted before centering
          return
       end
@@ -421,7 +495,7 @@ local function expand_vertical()
    c.maximized_vertical = true
 
    gears.timer.delayed_call(function () 
-      client.focus:geometry(tobe)
+      client.focus:geometry(tobe)   
       client.focus:raise()
    end)
 
@@ -434,6 +508,7 @@ local function shuffle(direction)
    return function()
       local tablist = get_tiled_clients()
       --|this is the ordered list
+      
 
       if not #tablist then return end
       --▨ flow control
@@ -500,6 +575,14 @@ end
 
 ---------------------------------------------------------- my_shifter() -- ;
 
+local function reset_client_meta(c)
+   c.maximized = false
+   c.maximized_horizontal = false
+   c.maximized_vertical = false
+   c.direction = nil
+   return c
+end
+
 local function my_shifter(direction, swap)
    return function()
 
@@ -513,6 +596,9 @@ local function my_shifter(direction, swap)
       local target_region_ix
       local target_region
 
+      c = reset_client_meta(c)
+      --|clean artifacts in case client was expanded.
+   
       if direction == "backward" then
          if (client_region_ix + 1) > #stuff.regions then 
             target_region_ix = 1
@@ -547,6 +633,9 @@ local function my_shifter(direction, swap)
       c:geometry(target_region)
       --|relocate client
 
+      c.region = target_region_ix
+      --|update client property
+
       if not swap then c:raise() end
       --|raise
 
@@ -556,9 +645,11 @@ local function my_shifter(direction, swap)
       end --|perform swap
 
       draw_tabbar(target_region_ix)
+      resize_region(target_region_ix, target_region, true)
       --|update tabs in target region
       
       draw_tabbar(client_region_ix)
+      resize_region(client_region_ix, source_region, true)
       --|update tabs in source region
    end   
 end
@@ -597,7 +688,6 @@ local function shift_by_direction(direction, swap)
          target_region_ix = go_edge(try, stuff.regions, client.focus:geometry())
       end --|go the beginning or the end if there is no
           --|candidate
-
       
       source_region = stuff.regions[client_region_ix]
       target_region = stuff.regions[target_region_ix]
@@ -608,6 +698,9 @@ local function shift_by_direction(direction, swap)
       c:geometry(target_region)
       --|relocate client
 
+      c.region = target_region_ix
+      --|update client property
+
       if not swap then c:raise() end
       --|raise
 
@@ -617,9 +710,11 @@ local function shift_by_direction(direction, swap)
       end --|perform swap
 
       draw_tabbar(target_region_ix)
+      resize_region(target_region_ix, target_region, true)
       --|update tabs in target region
       
       draw_tabbar(client_region_ix)
+      resize_region(client_region_ix, source_region, true)
       --|update tabs in source region
    end
 end
@@ -627,8 +722,7 @@ end
 ----------------------------------------------------- get_tiled_clients -- ;
 
 function get_tiled_clients(region_ix)
-   local tablist = region_tablist(region_ix)
-
+   local tablist = test_tablist(region_ix)
    local all_clients = get_global_clients()
    local tiled_clients = {}
    local myorder = {}
@@ -648,7 +742,7 @@ function get_tiled_clients(region_ix)
 
    return tiled_clients
 end
---[[+
+--[[+]
    global_client_index stores the ordered list of all clients
    available and it is used as a blueprint to keep the order
    of our tablist intact, without this, tabbars would go out
@@ -677,6 +771,7 @@ function draw_tabbar(region_ix)
          local buttons = gears.table.join(awful.button({}, 1, function() end))
          wid_temp = tabs.create(cc, (cc == c), buttons, c_ix)
          flexlist:add(wid_temp)
+         flexlist.max_widget_size = 120
       end
 
       local titlebar = awful.titlebar(c, {
@@ -692,6 +787,19 @@ function draw_tabbar(region_ix)
    end
 end
 
+function resize_region(region_ix, geom, reset)
+   local tablist = get_tiled_clients(region_ix)
+   for c_ix, c in ipairs(tablist) do
+      if reset == true then 
+         reset_client_meta(c) 
+      else
+         c.maximized_horizontal = reset.horizontal
+         c.maximized_vertical = reset.vertical
+         c.direction = reset.direction
+      end
+      c:geometry(geom)
+   end
+end
 
 ------------------------------------------------------ signal helpers -- ;
 
@@ -754,6 +862,7 @@ local function floating_signal(c)
    end --|window became tiled
 end
 
+
 --------------------------------------------------------------- signals -- ;
 
 client.connect_signal("property::minimized", function(c)
@@ -762,7 +871,6 @@ client.connect_signal("property::minimized", function(c)
 end)
 --[[+] manage minimized and not minimized ]]
 
-
 client.connect_signal("property::floating", floating_signal)
 --[[+]
    when windows switch between float and tiled we must
@@ -770,6 +878,9 @@ client.connect_signal("property::floating", floating_signal)
    source regions. a delayed call was necessary when
    clients become tiled to give awm enough time to draw the
    widgets properly.]]
+
+client.connect_signal("tabbar_draw", draw_tabbar)
+--[[+] experimental signalling ]]
 
 client.connect_signal("unmanage", unmanage_signal) 
 --[[+]
