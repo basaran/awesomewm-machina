@@ -76,7 +76,9 @@ local bindings = {
    awful.key({modkey, "Shift"}, "Home", move_to("center")),
 
    -- awful.key({mondkey}, "u", )   
-   awful.key({modkey,}, "o", teleport_client), --|client teleport to other screen
+   awful.key({modkey,}, "o", function(c) 
+   naughty.notify({text=inspect(client.focus.screen)})
+   end), --|client teleport to other screen
 
    awful.key({modkey}, "Left", focus_by_direction("left")),
    awful.key({modkey}, "Down", focus_by_direction("down")),

@@ -32,14 +32,9 @@ function log(m,context)
 end
 
 local function clear_tabbar(c, position)
-   -- log(position, " clear_tab_bar_invoked ")
-
    if not c then return end
-   
-   position = position or "bottom"
+   local position = position or "bottom"
    local titlebar = awful.titlebar(c, {size=3, position=position})
-   awful.titlebar(c, {size=0, position="left"})
-   awful.titlebar(c, {size=0, position="right"})
    titlebar:setup{
       layout=wibox.layout.flex.horizontal, nil
    }
@@ -74,11 +69,12 @@ end
 
 --------------------------------------------------------- screen_info() -- ;
 
-local function screen_info()
-   local focused_screen = awful.screen.focused() or nil
-   local workarea = focused_screen.workarea or nil
-   local selected_tag = focused_screen.selected_tag or nil
-   local layout = awful.layout.get(focused_screen) or nil
+local function screen_info(s)
+   local s = s or awful.screen.focused()
+   local focused_screen = s or nil
+   local workarea = s.workarea or nil
+   local selected_tag = s.selected_tag or nil
+   local layout = awful.layout.get(s) or nil
    local focused_client = client.focus or nil
 
    return focused_screen,
@@ -90,12 +86,13 @@ end
 
 --------------------------------------------------------- get_regions() -- ;
 
-local function get_regions()
+local function get_regions(s)
+   local s = s or awful.screen.focused()
    local focused_screen,
          workarea,
          selected_tag,
          layout,
-         focused_client = screen_info()
+         focused_client = screen_info(s)
 
    local machi_fn = nil
    local machi_data = nil
@@ -240,16 +237,13 @@ end
 
 ------------------------------------------------------ region_tablist() -- ;
 
-local function test_tablist(region_ix, c)
-   local focused_screen = awful.screen.focused()
-   local workarea = awful.screen.focused().workarea
-   local selected_tag = awful.screen.focused().selected_tag
-   local tablist = {}
-   local active_region = region_ix or nil
+local function test_tablist(region_ix, c, s)
    local source_client = c or client.focus or nil
-   local regions = get_regions()
-   
-   all_client = get_global_clients()
+   local source_screen = (source_client and source_client.screen) or s or awful.screen.focused()
+   local active_region = region_ix or nil
+   local regions = get_regions(source_screen)
+   local all_client = get_global_clients()
+   local region_clients = {}
 
    if not active_region then
       for i, a in ipairs(regions) do
@@ -263,7 +257,7 @@ local function test_tablist(region_ix, c)
        --|focused_client.
 
 
-   region_clients = {}
+   
    for i, cc in pairs(all_client) do
       if cc.region == active_region and regions[active_region].x == cc.x 
          and regions[active_region].y == cc.y
@@ -510,7 +504,7 @@ local function shuffle(direction)
    return function()
       local tablist = get_tiled_clients()
       --|this is the ordered list
-      
+      -- log(client.focus.region)
 
       if not #tablist then return end
       --▨ flow control
@@ -723,8 +717,9 @@ end
 
 ----------------------------------------------------- get_tiled_clients -- ;
 
-function get_tiled_clients(region_ix)
-   local tablist = test_tablist(region_ix)
+function get_tiled_clients(region_ix, s)
+   local s = s or awful.screen.focused()
+   local tablist = test_tablist(region_ix, c, s)
    local all_clients = get_global_clients()
    local tiled_clients = {}
    local myorder = {}
@@ -793,9 +788,11 @@ client.connect_signal("unfocus", function (c)
    end
 end)
 
-function draw_tabbar(region_ix)
+
+function draw_tabbar(region_ix, s)
+   local s = s or awful.screen.focused()
    local flexlist = tabs.layout()
-   local tablist = get_tiled_clients(region_ix)
+   local tablist = get_tiled_clients(region_ix, s)
 
    if tablelength(tablist) == 0 then
       return
@@ -807,29 +804,29 @@ function draw_tabbar(region_ix)
    end --|reset tabbar titlebar when only
        --|one client is in the region.
 
-   for c_ix, c in ipairs(tablist) do
+   for cl_ix, cl in ipairs(tablist) do
       local flexlist = tabs.layout()
-      global_tab_table[c.window] = {}
+      global_tab_table[cl.window] = {}
 
       for cc_ix, cc in ipairs(tablist) do
          local buttons = gears.table.join(awful.button({}, 1, function() end))
          -- wid_temp
-         global_tab_table[c.window][cc_ix] = tabs.create(cc, (cc == c), buttons, c_ix)
+         global_tab_table[cl.window][cc_ix] = tabs.create(cc, (cc == cl), buttons, cl_ix)
 
-         flexlist:add(global_tab_table[c.window][cc_ix])
+         flexlist:add(global_tab_table[cl.window][cc_ix])
          flexlist.max_widget_size = 120
       end
 
-      local titlebar = awful.titlebar(c, {
+      local titlebar = awful.titlebar(cl, {
          bg = tabs.bg_normal,
          size = tabs.size,
          position = tabs.position,
       })
 
       titlebar:setup{layout = wibox.layout.flex.horizontal, flexlist}
-      awful.titlebar(c, {size=8, position = "top"})
-      awful.titlebar(c, {size=0, position = "left"})
-      awful.titlebar(c, {size=0, position = "right"})
+      awful.titlebar(cl, {size=8, position = "top"})
+      awful.titlebar(cl, {size=0, position = "left"})
+      awful.titlebar(cl, {size=0, position = "right"})
    end
 end
 
@@ -889,7 +886,10 @@ local function manage_signal(c)
       local active_region = get_client_info(c).active_region
       if active_region then
          c.region = active_region
-         draw_tabbar(active_region)
+         gears.timer.delayed_call(function(region, screen)
+            draw_tabbar(region, screen)
+         end, active_region, c.screen)
+         
       end --|in case new client appears tiled
           --|we must update the regions tabbars.
    end
@@ -909,14 +909,15 @@ local function unmanage_signal(c)
 end
 
 local function selected_tag_signal(t)
-   gears.timer.delayed_call(function() 
+   -- gears.timer.delayed_call(function(t)
+      log(t.name)
       local regions = get_regions()
          if regions and #regions then
             for i, region in ipairs(regions) do
                draw_tabbar(i)
             end
          end
-   end)
+   -- end,t)
 end
 
 local function floating_signal(c)
@@ -978,7 +979,19 @@ client.connect_signal("manage", manage_signal)
 --[[+]
    global_client_table is the milestone the tabbars rely on.
    whenever a new client appears we must add to it, and
-   when a client is killed we must make sure it is removed. ]]
+   when a client is killed we must make sure it is removed. 
+   
+   when there are multiple monitors, our logic of
+   awful.screen.focused() doesn't work. it won't draw the
+   tabbars on the second monitor if the mouse is located at
+   the first monitor and vice versa.
+
+   it probably needs an order such as: s or
+   client.focus.screen or awful.screen.focused() c.screen
+   where applicable.
+
+   and we might need to pass c and s to all the functions
+   involved.]] 
 
 tag.connect_signal("property::selected", selected_tag_signal)
 --[[+]
