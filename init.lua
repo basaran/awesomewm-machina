@@ -15,6 +15,7 @@ local my_shifter = machina.my_shifter
 local expand_vertical = machina.expand_vertical
 local move_to = machina.move_to
 local toggle_always_on = machina.toggle_always_on
+local teleport_client = machina.teleport_client
 
 ---------------------------------------------------------- key bindings -- ;
 
@@ -75,19 +76,7 @@ local bindings = {
    awful.key({modkey, "Shift"}, "Home", move_to("center")),
 
    -- awful.key({mondkey}, "u", )   
-   awful.key({modkey,}, "o", function ()
-      c = client.focus
-      if not c then return true end
-
-      if not c.floating then
-         c:geometry({width=300, height=300})
-      end --|to avoid machi's auto expansion
-
-      c:move_to_screen()
-      gears.timer.delayed_call(function () 
-         c:emit_signal("request::activate", "mouse_enter",{raise = true})
-      end)
-   end), --|client teleport to other screen
+   awful.key({modkey,}, "o", teleport_client), --|client teleport to other screen
 
    awful.key({modkey}, "Left", focus_by_direction("left")),
    awful.key({modkey}, "Down", focus_by_direction("down")),

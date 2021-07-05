@@ -16,6 +16,7 @@ local clear_tabbar = helpers.clear_tabbar
 ---------------------------------------------------------------- locals -- ;
 
 local global_client_table = {}
+local global_tab_table = {}
 
 function get_global_clients()
    return global_client_table
@@ -26,6 +27,7 @@ function update_global_clients(c)
 end
 
 function log(m,context)
+   context = context or ""
    naughty.notify({text=inspect(m) .. " :" .. context })
 end
 
@@ -750,7 +752,7 @@ end
 
 -------------------------------------------------------- draw_tabbar() -- ;
 
-local widget_ix = {}
+
 
 -- client.connect_signal("property::name", function (c)
 --    -- todo: need to update the other clients in the region here as well
@@ -770,10 +772,10 @@ local widget_ix = {}
 
 
 client.connect_signal("focus", function (c)
-   if widget_ix[c.window] then
-      for i, p in pairs(widget_ix[c.window]) do
+   if global_tab_table[c.window] then
+      for i, p in pairs(global_tab_table[c.window]) do
          if p.focused then
-            widget = widget_ix[c.window][i]:get_children_by_id(c.window)[1]
+            local widget = global_tab_table[c.window][i]:get_children_by_id(c.window)[1]
             widget.bg = "#43417a"
          end
       end
@@ -781,11 +783,11 @@ client.connect_signal("focus", function (c)
 end)
 
 client.connect_signal("unfocus", function (c)
-   if widget_ix[c.window] then
-      for i, p in pairs(widget_ix[c.window]) do
+   if global_tab_table[c.window] then
+      for i, p in pairs(global_tab_table[c.window]) do
          if p.focused then
-            widget = widget_ix[c.window][i]:get_children_by_id(c.window)[1]
-            widget.bg = "#292929"
+            p.bg = "#292929"
+            break
          end
       end
    end
@@ -807,14 +809,14 @@ function draw_tabbar(region_ix)
 
    for c_ix, c in ipairs(tablist) do
       local flexlist = tabs.layout()
-      widget_ix[c.window] = {}
+      global_tab_table[c.window] = {}
 
       for cc_ix, cc in ipairs(tablist) do
          local buttons = gears.table.join(awful.button({}, 1, function() end))
          -- wid_temp
-         widget_ix[c.window][cc_ix] = tabs.create(cc, (cc == c), buttons, c_ix)
+         global_tab_table[c.window][cc_ix] = tabs.create(cc, (cc == c), buttons, c_ix)
 
-         flexlist:add(widget_ix[c.window][cc_ix])
+         flexlist:add(global_tab_table[c.window][cc_ix])
          flexlist.max_widget_size = 120
       end
 
@@ -843,6 +845,38 @@ function resize_region(region_ix, geom, reset)
       end
       c:geometry(geom)
    end
+end
+
+local function teleport_client(c)
+   -- todo: need to recalculate tabs and also update c.region
+   local cl = c or client.focus
+   if not cl then return true end
+
+
+   local is = {
+      region=cl.region or get_client_info(c).active_region,
+      geom=cl:geometry(),
+      screen=cl.screen.index
+   }
+
+   if not cl.floating then
+      cl:geometry({width=300, height=300})
+   end --|to avoid machi's auto expansion
+
+
+   cl:move_to_screen()
+   local new_region = get_client_info(c).active_region
+
+   if not new_region then
+      c.region = nil
+   end
+
+   gears.timer.delayed_call(function (cl) 
+      
+      -- clear_tabbar(cl)
+      cl:emit_signal("request::activate", "mouse_enter",{raise = true})
+      cl:emit_signal("draw_tabbar", new_region)
+   end,cl)
 end
 
 ------------------------------------------------------ signal helpers -- ;
@@ -971,6 +1005,7 @@ module = {
    get_global_clients = get_global_clients,
    update_global_clients = update_global_clients,
    get_client_info = get_client_info,
+   teleport_client = teleport_client,
 }
 
 return module

@@ -56,7 +56,7 @@ cd ~/.config/awesome
 clone this repository:
 
 ```
-git clone https://github.com/basaran/awesomewm-machina
+git clone https://github.com/basaran/awesomewm-machina machina
 ```
 
 and call it from your `rc.lua`
