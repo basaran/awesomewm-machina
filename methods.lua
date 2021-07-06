@@ -203,7 +203,8 @@ local function get_client_info(c)
       active_region = active_region,
       active_region_geom = active_region_geom,
       regions = regions,
-      outofboundary = outofboundary
+      outofboundary = outofboundary,
+      tags = c:tags()
    }
 end
 
@@ -989,6 +990,8 @@ local function riseup_signal(c)
    client.focus = c; c:raise()
    -- c:emit_signal("request::activate", "mouse_enter",{raise = true})
 end
+
+
 --------------------------------------------------------------- signals -- ;
 
 client.connect_signal("riseup", riseup_signal)
