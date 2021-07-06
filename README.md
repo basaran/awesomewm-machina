@@ -37,6 +37,7 @@ We now have tabs for tiled clients :)
 
 - [ ] Better keybindings (possibly emacs style)
 - [ ] Clickable tabs
+- [ ] Add binding for relocating the entire region
 - [ ] Deck spread (send focused client to a direction without moving focus)
 - [ ] Visual teleport (overlay with region numbers to choose from)
 - [x] Avoid machi's auto expansion on config reload
