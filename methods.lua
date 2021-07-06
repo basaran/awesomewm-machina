@@ -221,9 +221,13 @@ local function move_to(location)
          local tobe = {
             region=get_client_info(client.focus).active_region   
          }
-         draw_tabbar(tobe.region)
          draw_tabbar(is.region)
-         client.focus.region = tobe.region
+
+         gears.timer.delayed_call(function ()
+            client.focus.region = tobe.region
+            draw_tabbar(tobe.region)
+         end)
+         
       end --| redraw tabs and update meta
 
       return
