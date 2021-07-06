@@ -49,6 +49,8 @@ We now have tabs for tiled clients :)
 - [x] Directional swapping toggle
 - [x] Rotational swapping toggle
 - [x] Refresh layout on tag switching
+- [x] Infinite directions left-to-right
+- [ ] Better support for infinite directions on dual monitors
 - [x] Floating clients should respond to swapping
 - [x] Floating clients should respond to shifting
 
