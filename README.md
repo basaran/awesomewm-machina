@@ -36,6 +36,7 @@ We now have tabs for tiled clients :)
 ### Next?
 
 - [ ] Better keybindings
+- [ ] Clickable tabs
 - [x] Avoid machi's auto expansion on config reload
 - [x] Show tabs everywhere
 - [x] Dual monitor support
