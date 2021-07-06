@@ -765,10 +765,12 @@ function draw_tabbar(region_ix, s)
       global_widget_table[cl.window] = {}
 
       for cc_ix, cc in ipairs(tablist) do
-         local buttons = gears.table.join(awful.button({}, 1, function() end))
-         -- wid_temp
+         local buttons = gears.table.join(awful.button({}, 1, function(_) 
+            gears.timer.delayed_call(function(p) 
+               client.emit_signal("riseup", p)
+            end, cc)
+         end))
          global_widget_table[cl.window][cc_ix] = tabs.create(cc, (cc == cl), buttons, cl_ix)
-
          flexlist:add(global_widget_table[cl.window][cc_ix])
          flexlist.max_widget_size = 120
       end
@@ -983,8 +985,13 @@ end -- todo: need to update the other clients in the region here as well
     -- client.connect_signal("property::name", name_signal)
 
 
+local function riseup_signal(c)
+   client.focus = c; c:raise()
+   -- c:emit_signal("request::activate", "mouse_enter",{raise = true})
+end
 --------------------------------------------------------------- signals -- ;
 
+client.connect_signal("riseup", riseup_signal)
 client.connect_signal("focus", focus_signal)
 client.connect_signal("unfocus", unfocus_signal)
 client.connect_signal("property::minimized", minimized_signal)

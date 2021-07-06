@@ -36,7 +36,7 @@ We now have tabs for tiled clients :)
 ### Next?
 
 - [ ] Better keybindings (possibly emacs style)
-- [ ] Clickable tabs
+- [X] Clickable tabs
 - [ ] Add binding for relocating the entire region
 - [ ] Deck spread (send focused client to a direction without moving focus)
 - [ ] Visual teleport (overlay with region numbers to choose from)
