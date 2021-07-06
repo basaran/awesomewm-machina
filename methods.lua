@@ -112,25 +112,6 @@ local function get_regions(s)
    return machi_regions, machi_fn
 end
 
------------------------------------------------------------ get_edges() -- ;
-
-local function move_to(location)
-   return function()
-      local useless_gap = nil
-      local regions = get_regions()
-      local edges = {x={},y={}}
-
-      for i,region in ipairs(regions) do
-         edges.x[region.x] = region.x + region.width
-         edges.y[region.y] = region.y + region.height
-      end
-      
-      useless_gap = getlowest(edges.x)
-      client.focus:geometry(geoms[location](useless_gap))
-      return
-   end
-end
-
 ------------------------------------------------------- get_client_info -- ;
 
 local function get_client_info(c)
@@ -204,12 +185,49 @@ local function get_client_info(c)
        --|that as out of boundary.
    -- refactor
 
+   active_region_geom = {
+      width=regions[active_region].width-regions[active_region].width/2,
+      height=regions[active_region].height-regions[active_region].height/2
+   }
 
    return {
       active_region = active_region,
+      active_region_geom = active_region_geom,
       regions = regions,
       outofboundary = outofboundary
    }
+end
+
+------------------------------------------------------------- move_to() -- ;
+
+local function move_to(location)
+   return function()
+      local useless_gap = nil
+      local regions = get_regions()
+      local edges = {x={},y={}}
+      local is = {
+         region=get_client_info(client.focus).active_region
+      }
+
+      for i,region in ipairs(regions) do
+         edges.x[region.x] = region.x + region.width
+         edges.y[region.y] = region.y + region.height
+      end
+      
+      useless_gap = getlowest(edges.x)
+      client.focus:geometry(geoms[location](useless_gap))
+
+      if not client.focus.floating then
+         local tobe = {
+            region=get_client_info(client.focus).active_region   
+         }
+         draw_tabbar(tobe.region)
+         draw_tabbar(is.region)
+         client.focus.region = tobe.region
+      end --| redraw tabs and update meta
+
+      return
+   end
 end
 
 ----------------------------------------- focus_by_direction(direction) -- ;
@@ -222,15 +240,15 @@ local function focus_by_direction(direction)
    end
 end
 
------------------------------------------------------- region_tablist() -- ;
+----------------------------------------------- get_clients_in_region() -- ;
 
-local function test_tablist(region_ix, c, s)
+local function get_clients_in_region(region_ix, c, s)
    local s = s or c.screen or awful.screen.focused()
+   local c = c or client.focus or nil
    local source_client = c or client.focus or nil
    local source_screen = s or (source_client and source_client.screen)
    local active_region = region_ix or nil
    local regions = get_regions(s)
-   local all_client = get_global_clients()
    local region_clients = {}
 
    if not active_region then
@@ -241,68 +259,60 @@ local function test_tablist(region_ix, c, s)
             active_region = i
          end
       end
-   end --|if no region index provided, find the region of the
-       --|focused_client.
-
-   for i, cc in pairs(all_client) do
-      if cc.region == active_region and regions[active_region].x == cc.x 
-         and regions[active_region].y == cc.y
-         then
-         region_clients[#region_clients + 1] = cc
-      end
-   end
-
-    return region_clients
-end
-
-local function pest_tablist(region_ix, c, s)
-   local s = s or c.screen or awful.screen.focused()
-   local source_client = c or client.focus or nil
-   local source_screen = s or (source_client and source_client.screen)
-   local active_region = region_ix or nil
-   local regions = get_regions(s)
-   local tablist = {}
+   end --|if no region index was provided, find the 
+       --|region of the focused_client.
 
    if not active_region then
-      for i, a in ipairs(regions) do
-         if a.x <= source_client.x and source_client.x < a.x + a.width and
-            a.y <= source_client.y and source_client.y < a.y + a.height
-         then
-            active_region = i
+      return
+   end
+
+   if #region_clients == 0 then
+      for i, w in ipairs(s.clients) do
+         if not (w.floating) then
+            if math.abs(regions[active_region].x - w.x) <= 5  and
+               math.abs(regions[active_region].y - w.y) <= 5
+            then
+               region_clients[#region_clients + 1] = w
+               w.region = region_ix
+               --|this basically will fix any inconsistency
+               --|along the way.
+            end
          end
-      end
-   end --|if no region index provided, find the region of the
-       --|focused_client.
+      end --|try to get clients based on simple coordinates
+   end
 
-   -- for _, tc in ipairs(s.clients) do
-   --    if not (tc.floating) then
-   --       if regions[active_region].x <= tc.x + tc.width + tc.border_width * 2 and
-   --          tc.x <= regions[active_region].x + regions[active_region].width  and
-   --          regions[active_region].y <= tc.y + tc.height + tc.border_width * 2  and
-   --          tc.y <= regions[active_region].y + regions[active_region].height 
-   --       then
-   --          tablist[#tablist + 1] = tc
-   --       end
-   --    end
-   -- end --|tablist inside the active region
-   -- --|this will create issues with overflowing clients such as the ones
-   -- --|expanded to center or anything intersecting for that matter.
-
-   for _, tc in ipairs(s.clients) do
-      if not (tc.floating) then
-         if math.abs(regions[active_region].x - tc.x) <= 5  and
-            math.abs(regions[active_region].y - tc.y) <= 5
-         then
-            tablist[#tablist + 1] = tc
+   if #region_clients == 0 then
+      for i, cc in pairs(s.clients) do
+         if cc.region == active_region 
+            and regions[active_region].x == cc.x 
+            and regions[active_region].y == cc.y 
+            then
+            region_clients[#region_clients + 1] = cc
          end
-      end
-   end --|tablist inside the active region
+      end 
+   end --| this logic compares c.region to global client index.
+       --| if we somehow fail to update c.region somewhere
+       --| shuffle shortcuts won't work with this one.
 
-   return tablist
-end
---|tablist order is adjusted by awesomewm and it will
---|always have the focused client as the first item.
---|list of all the clients within a region.
+   if #region_clients == 0 then
+      for _, cc in ipairs(s.clients) do
+         if not (cc.floating) then
+            if regions[active_region].x <= cc.x + cc.width + cc.border_width * 2 
+               and cc.x <= (regions[active_region].x + regions[active_region].width) 
+               and regions[active_region].y <= (cc.y + cc.height + cc.border_width * 2)
+               and cc.y <= (regions[active_region].y + regions[active_region].height)
+            then
+               region_clients[#region_clients + 1] = cc
+            end
+         end
+      end 
+   end --|this logic works with coordinates more throughly but
+       --|it also causes issues with overflowing
+       --|(expanded) clients.
+
+   return region_clients
+end --|try to get clients in a region using three different
+    --|algorithms.
 
 ----------------------------------------------------- expand_horizontal -- ;
 
@@ -319,8 +329,12 @@ local function expand_horizontal(direction)
          c.direction = nil
          c.maximized_horizontal = false
          c.maximized_vertical = false
-         draw_tabbar(c.region)
-         resize_region(c.region, c:geometry(), true)
+
+         if not c.floating then
+            draw_tabbar(c.region)
+            resize_region_to_client(c, true)
+         end
+
          return
       end --|reset toggle when sending same shortcut
           --|consequitively
@@ -346,7 +360,7 @@ local function expand_horizontal(direction)
          gears.timer.delayed_call(function (c) 
             c:geometry(tobe)
             draw_tabbar(c.region)
-            resize_region(c.region, tobe, {horizontal=true,vertical=false,direction=direction})
+            resize_region_to_client(c, {horizontal=true,vertical=false,direction=direction})
             -- clear_tabbar(c)
          end,c)
          return
@@ -368,6 +382,7 @@ local function expand_horizontal(direction)
             client.focus:geometry(tobe)
             draw_tabbar(c.region)
             clear_tabbar(c)
+            resize_region_to_client(c, {horizontal=true,vertical=false,direction=direction})
          end,c)
          return
       end
@@ -475,7 +490,6 @@ local function shuffle(direction)
    return function()
       local tablist = get_tiled_clients()
       --|this is the ordered list
-      -- log(client.focus.region)
 
       if not #tablist then return end
       --▨ flow control
@@ -612,11 +626,11 @@ local function my_shifter(direction, swap)
       end --|perform swap
 
       draw_tabbar(target_region_ix)
-      resize_region(target_region_ix, target_region, true)
+      resize_region_to_index(target_region_ix, target_region, true)
       --|update tabs in target region
       
       draw_tabbar(client_region_ix)
-      resize_region(client_region_ix, source_region, true)
+      resize_region_to_index(client_region_ix, source_region, true)
       --|update tabs in source region
    end   
 end
@@ -640,8 +654,7 @@ local function shift_by_direction(direction, swap)
          down = grect.get_in_direction("down", stuff.regions, client.focus:geometry()),
          left = grect.get_in_direction("left", stuff.regions, client.focus:geometry()),
          right = grect.get_in_direction("right", stuff.regions, client.focus:geometry())
-      } --|awesomewm magic function to find out what lies
-        --|ahead and beyond based on the direction
+      }
 
       target_region_ix = candidate[direction]
       --|try to get a candidate region if possible
@@ -674,14 +687,15 @@ local function shift_by_direction(direction, swap)
       if swap and swapee then
          swapee:geometry(source_region)
          swapee:emit_signal("request::activate", "mouse_enter",{raise = true})
-      end --|perform swap
+         swapee.region = client_region_ix
+      end --|perform swap, update meta
 
       draw_tabbar(target_region_ix)
-      resize_region(target_region_ix, target_region, true)
+      resize_region_to_index(target_region_ix, target_region, true)
       --|update tabs in target region
       
       draw_tabbar(client_region_ix)
-      resize_region(client_region_ix, source_region, true)
+      resize_region_to_index(client_region_ix, source_region, true)
       --|update tabs in source region
    end
 end
@@ -689,8 +703,8 @@ end
 ----------------------------------------------------- get_tiled_clients -- ;
 
 function get_tiled_clients(region_ix, s)
-   local s = s or awful.screen.focused()
-   local tablist = pest_tablist(region_ix, c, s)
+   local s = s or client.focus.screen or awful.screen.focused()
+   local tablist = get_clients_in_region(region_ix, c, s)
    local all_clients = get_global_clients()
    local tiled_clients = {}
    local myorder = {}
@@ -709,56 +723,9 @@ function get_tiled_clients(region_ix, s)
    end
 
    return tiled_clients
-end
---[[+]
-   global_client_index stores the ordered list of all clients
-   available and it is used as a blueprint to keep the order
-   of our tablist intact, without this, tabbars would go out
-   of order when user focuses via shortcuts (run_or_raise). ]]
+end --[23]
 
 -------------------------------------------------------- draw_tabbar() -- ;
-
-
-
--- client.connect_signal("property::name", function (c)
---    -- todo: need to update the other clients in the region here as well
-      -- this may not even be worth it as the client names kind of pollute the
-      -- tabs a lot making it harder to distinguish what is what.
-
---    if widget_ix[c.window] then
---       for i, p in pairs(widget_ix[c.window]) do
---          if p.focused then
---             widget = widget_ix[c.window][i]:get_children_by_id(c.window)[1]
---             -- naughty.notify({preset = naughty.config.presets.critical, text=inspect(widget)})
---             widget.widget.markup = c.name
---          end
---       end
---    end
--- end)
-
-
-client.connect_signal("focus", function (c)
-   if global_widget_table[c.window] then
-      for i, p in pairs(global_widget_table[c.window]) do
-         if p.focused then
-            local widget = global_widget_table[c.window][i]:get_children_by_id(c.window)[1]
-            widget.bg = "#43417a"
-         end
-      end
-   end
-end)
-
-client.connect_signal("unfocus", function (c)
-   if global_widget_table[c.window] then
-      for i, p in pairs(global_widget_table[c.window]) do
-         if p.focused then
-            p.bg = "#292929"
-            break
-         end
-      end
-   end
-end)
-
 
 function draw_tabbar(region_ix, s)
    local s = s or awful.screen.focused()
@@ -801,7 +768,30 @@ function draw_tabbar(region_ix, s)
    end
 end
 
-function resize_region(region_ix, geom, reset)
+------------------------------------------------------ resize_region_to -- ;
+
+-- todo: can merge these later, this will have side effects
+-- when using multipler monitors.
+
+function resize_region_to_client(c, reset)
+   if c.floating then return end
+   --|we don't wan't interference
+
+   local c = c or client.focus
+   local tablist = get_tiled_clients(c.region)
+   for i, w in ipairs(tablist) do
+      if reset == true then 
+         reset_client_meta(w)
+      else
+         w.maximized_horizontal = reset.horizontal
+         w.maximized_vertical = reset.vertical
+         w.direction = reset.direction
+      end
+      w:geometry(c:geometry())
+   end
+end
+
+function resize_region_to_index(region_ix, geom, reset)
    local tablist = get_tiled_clients(region_ix)
    for c_ix, c in ipairs(tablist) do
       if reset == true then 
@@ -815,6 +805,8 @@ function resize_region(region_ix, geom, reset)
    end
 end
 
+----------------------------------------------------- teleport_client() -- ;
+
 local function teleport_client(c,s)
    local c = c or client.focus
    local s = s or c.screen or awful.screen.focused()
@@ -827,8 +819,6 @@ local function teleport_client(c,s)
       geom=c:geometry(),
       screen=c.screen
    } --|parameters before teleport
-
-   -- log(is)
 
    if not c.floating then
       c:geometry({width=300, height=300})
@@ -844,8 +834,8 @@ local function teleport_client(c,s)
          region=get_client_info(c).active_region,
       }
       c.region = tobe.region
-      draw_tabbar(c.region, c.screen )
-      draw_tabbar(is.region, is.screen )
+      draw_tabbar(c.region, c.screen)
+      draw_tabbar(is.region, is.screen)
       c:emit_signal("request::activate", "mouse_enter",{raise = true})
    end,c)
 end
@@ -853,22 +843,23 @@ end
 ------------------------------------------------------ signal helpers -- ;
 
 local function manage_signal(c)
-   if c then
-      global_client_table[c.window] = c
-      --|add window.id to client index
+   local ci = get_client_info(c)
+   --|client info
 
-      local active_region = get_client_info(c).active_region
+   global_client_table[c.window] = c
+   --|add window.id to client index
 
-      if active_region then
-         gears.timer.delayed_call(function(region, screen)
-            c.region = active_region
-            draw_tabbar(region, screen)
-         end, active_region, c.screen)
-         
-      end --|in case new client appears tiled
-          --|we must update the regions tabbars.
-   end
-end
+   if ci.active_region and not c.floating then
+      gears.timer.delayed_call(function(region, screen, p)
+         p.region = region
+         draw_tabbar(region, screen)
+         c:geometry(ci.active_region_geom)
+      end, ci.active_region, c.screen, c)
+   end --|in case new client appears tiled
+       --|we must update the regions tabbars.
+end --[6] 
+
+----------------------------------------------------;
 
 local function unmanage_signal(c)
    if c then
@@ -879,12 +870,15 @@ local function unmanage_signal(c)
       --|remove window.id from widget index
 
       if not c.floating then
-         local active_region = get_client_info(c).active_region
-         if active_region then 
-            draw_tabbar(active_region) end
+         local ci = get_client_info(c)
+         if ci.active_region then 
+            draw_tabbar(ci.active_region, c.screen)
+         end
       end
    end
-end
+end --[7]
+
+----------------------------------------------------;
 
 local function selected_tag_signal(t)
    gears.timer.delayed_call(function(t)
@@ -895,7 +889,9 @@ local function selected_tag_signal(t)
             end
          end
    end,t)
-end
+end --[8]
+
+----------------------------------------------------;
 
 local function floating_signal(c)
    if c.floating then
@@ -903,78 +899,82 @@ local function floating_signal(c)
          gears.timer.delayed_call(function(active_region)
             clear_tabbar(c)
             draw_tabbar(c.region)
-            c.region = nil --| check for side effects
+            c.region = nil
          end, active_region)
       end
    end --|window became floating
 
    if not c.floating then
-      local active_region = get_client_info(c).active_region
-      if active_region then
-         c.region = active_region
+      local ci = get_client_info(c)
+      if ci.active_region then
+         c.region = ci.active_region
          gears.timer.delayed_call(function(active_region)
-            draw_tabbar(active_region)   
-         end, active_region)
+            draw_tabbar(active_region)
+         end, ci.active_region)
       end
    end --|window became tiled
+end --[9]
+
+----------------------------------------------------;
+
+local function focus_signal(c)
+   if global_widget_table[c.window] then
+      for i, p in pairs(global_widget_table[c.window]) do
+         if p.focused then
+            local widget = global_widget_table[c.window][i]:get_children_by_id(c.window)[1]
+            widget.bg = "#43417a"
+         end
+      end
+   end
 end
+
+----------------------------------------------------;
+
+local function unfocus_signal(c)
+   if global_widget_table[c.window] then
+      for i, p in pairs(global_widget_table[c.window]) do
+         if p.focused then
+            p.bg = "#292929"
+            break
+         end
+      end
+   end
+end
+
+----------------------------------------------------;
+
+local function minimized_signal(c)
+   if c.minimized then unmanage_signal(c) end
+   if not c.minimized then manage_signal(c) end 
+end --[[ manage minimized and not minimized ]]
+
+----------------------------------------------------;
+
+local function name_signal(c)
+   if widget_ix[c.window] then
+      for i, p in pairs(widget_ix[c.window]) do
+         if p.focused then
+            widget = widget_ix[c.window][i]:get_children_by_id(c.window)[1]
+            widget.widget.markup = c.name
+         end
+      end
+   end
+end -- todo: need to update the other clients in the region here as well
+    -- this may not even be worth it as the client names kind of pollute the
+    -- tabs a lot making it harder to distinguish what is what.
+    -- client.connect_signal("property::name", name_signal)
 
 
 --------------------------------------------------------------- signals -- ;
 
-client.connect_signal("property::minimized", function(c)
-   if c.minimized then unmanage_signal(c) end
-   if not c.minimized then manage_signal(c) end 
-end)
---[[+] manage minimized and not minimized ]]
-
+client.connect_signal("focus", focus_signal)
+client.connect_signal("unfocus", unfocus_signal)
+client.connect_signal("property::minimized", minimized_signal)
 client.connect_signal("property::floating", floating_signal)
---[[+]
-   when windows switch between float and tiled we must
-   perform necessary maintenance on the destination and
-   source regions. a delayed call was necessary when
-   clients become tiled to give awm enough time to draw the
-   widgets properly.]]
-
 client.connect_signal("tabbar_draw", draw_tabbar)
---[[+] experimental signalling ]]
-
--- client:connect_signal("property::name", function(c)
---    if widget_ix[c.window] then
---       local widget = widget_ix[c.window]:get_children_by_id(c.window)
---       text_temp.markup = "<span foreground='" .. fg_temp .. "'>" .. title_temp.. "</span>"
---    end
--- end)
-
 client.connect_signal("unmanage", unmanage_signal) 
---[[+]
-   when removing a tiled client we must update the tabbars
-   of others. floating clients do not require any cleanup. ]]
-
 client.connect_signal("manage", manage_signal)
---[[+]
-   global_client_table is the milestone the tabbars rely on.
-   whenever a new client appears we must add to it, and
-   when a client is killed we must make sure it is removed. 
-   
-   when there are multiple monitors, our logic of
-   awful.screen.focused() doesn't work. it won't draw the
-   tabbars on the second monitor if the mouse is located at
-   the first monitor and vice versa.
-
-   it probably needs an order such as: s or
-   client.focus.screen or awful.screen.focused() c.screen
-   where applicable.
-
-   and we might need to pass c and s to all the functions
-   involved.]] 
-
 tag.connect_signal("property::selected", selected_tag_signal)
---[[+]
-   property::selected gets called the last, by the time we
-   are here, we already have the global_client_list to draw
-   tabbars. This may appear redundant here, but it's good
-   to have this fire up in case the user switches tags. ]]
 
 --------------------------------------------------------------- exports -- ;
 
@@ -1000,3 +1000,48 @@ module = {
 return module
 
 
+--[[ ------------------------------------------------- NOTES ]
+
+  [4] machi's own region expansion has issues on
+  awesome-reload. if we were to expand a region, and then
+  do reload, machi-layout would insist to keep the expanded
+  layout in its own accord.
+
+  [5] to avoid this, we temporarily set the non floating
+  clients region geometry. 
+
+  [4] when the clients become float, we restore this
+  geometry. Do note, there is something awkward here, it
+  appears no matter what all clients start as float then
+  get tiled, so there is a flaw in this logic.
+
+  [9] when windows switch between float and tiled we must
+  perform necessary maintenance on the destination and
+  source regions. a delayed call was necessary when clients
+  become tiled to give awm enough time to draw the widgets
+  properly. (*)this floating signal acts weird during
+  configuration reloads.
+
+  [8] property::selected gets called the last, by the time
+  we are here, we already have the global_client_list to
+  draw tabbars. This may appear redundant here, but it's
+  good to have this fire up in case the user switches
+  tags.
+
+  [7] when removing a tiled client we must update the
+  tabbars of others. floating clients do not require any
+  cleanup.
+
+
+  [6] global_client_table is the milestone the tabbars rely
+  on. whenever a new client appears we must add to it, and
+  when a client is killed we must make sure it is
+  removed. 
+
+  [23] global_client_index stores the ordered list of all
+  clients available and it is used as a blueprint to keep
+  the order of our tablist intact, without this, tabbars
+  would go out of order when user focuses via shortcuts
+  (run_or_raise).
+
+--]]

@@ -2,18 +2,14 @@ local geoms = {}
 
 geoms.crt43 = function ()
    return {
-      x=awful.screen.focused().workarea.width - client.focus:geometry().width,
-      y=awful.screen.focused().workarea.height - client.focus:geometry().height + awful.screen.focused().workarea.y,
       width=1280,
-      height=1024
+      height=1024,
    }
 end --|awful.screen.focused().workarea.y is required for
     --|multiple monitors to relocate properly.
 
 geoms.p1080 = function ()
    return {
-      x=awful.screen.focused().workarea.width - client.focus:geometry().width,
-      y=awful.screen.focused().workarea.height - client.focus:geometry().height  + awful.screen.focused().workarea.y,
       width=awful.screen.focused().workarea.width * 0.65,
       height=awful.screen.focused().workarea.height * 0.90
    }
@@ -21,8 +17,6 @@ end
 
 geoms.p720 = function ()
    return {
-      x=awful.screen.focused().workarea.width - client.focus:geometry().width,
-      y=awful.screen.focused().workarea.height - client.focus:geometry().height  + awful.screen.focused().workarea.y,
       width=awful.screen.focused().workarea.width * 0.40,
       height=awful.screen.focused().workarea.height * 0.45
    }
@@ -63,10 +57,18 @@ geoms["bottom-right"] = function(useless_gap)
    }
 end
 
-geoms.clients = {
-   Subl=geoms.p1080,
-   Byobu=geoms.p720,
-   Krom=geoms.crt43,
-}
+
+geoms.clients = {}
+geoms.clients["Subl"] = geoms.p1080
+geoms.clients["Byobu"] = geoms.p720
+geoms.clients["Krom"] = geoms.crt43
+geoms.clients["Google-chrome"] = geoms.crt43
+   
+
+-- geoms.clients = {
+--    Subl=geoms.p1080,
+--    Byobu=geoms.p720,
+--    Krom=geoms.crt43,
+-- }
 
 return geoms

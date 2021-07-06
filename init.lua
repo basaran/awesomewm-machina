@@ -68,12 +68,11 @@ local bindings = {
    awful.key({modkey, "Shift"}, "Page_Down", expand_vertical),
    --▨ expand (neighbor)
 
-   awful.key({modkey}, "End", function() 
+   awful.key({modkey}, "End", function(c) 
       client.focus.maximized_vertical = false
       client.focus.maximized_horizontal = false
       awful.client.floating.toggle()
    end), --|toggle floating status
-
 
    awful.key({modkey}, "Left", focus_by_direction("left")),
    awful.key({modkey}, "Down", focus_by_direction("down")),
