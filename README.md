@@ -35,7 +35,22 @@ We now have tabs for tiled clients :)
 
 ### Next?
 
-New layout-machi has some logic to auto expand your windows onto multiple regions. I need to change region expansion to work nicely with it.
+- [ ] Better keybindings
+- [x] Avoid machi's auto expansion on config reload
+- [x] Show tabs everywhere
+- [x] Dual monitor support
+- [x] Allow zooming to center
+- [x] Fixed geometries for zooming in
+- [x] Auto hide floating layer
+- [x] Auto hide floating layer exclusions
+- [x] Simple move to designated coordinates (move_to)
+- [x] Focus/Unfocus to tabbed regions should have visual indicator
+- [x] Teleport client to other monitor
+- [x] Directional swapping toggle
+- [x] Rotational swapping toggle
+- [x] Refresh layout on tag switching
+- [x] Floating clients should respond to swapping
+- [x] Floating clients should respond to shifting
 
 ### Layout-Machi compatibility
 
