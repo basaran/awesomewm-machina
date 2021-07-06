@@ -26,6 +26,15 @@ function update_global_clients(c)
    global_client_table[c.window] = c
 end
 
+local function reset_client_meta(c)
+   c.maximized = false
+   c.maximized_horizontal = false
+   c.maximized_vertical = false
+   c.direction = nil
+   return c
+end
+
+
 ------------------------------------------------------------- go_edge() -- ;
 
 local function go_edge(direction, regions, current_box)
@@ -202,11 +211,20 @@ end
 
 local function move_to(location)
    return function()
+      local c = client.focus or nil
+
+      if not c then return end
+      --▨ flow control
+
+      local c = reset_client_meta(client.focus)
+      local ci = get_client_info(c)
       local useless_gap = nil
       local regions = get_regions()
       local edges = {x={},y={}}
+      
       local is = {
-         region=get_client_info(client.focus).active_region
+         region=ci.active_region,
+         region_geom=ci.active_region_geom
       }
 
       for i,region in ipairs(regions) do
@@ -217,7 +235,11 @@ local function move_to(location)
       useless_gap = getlowest(edges.x)
       client.focus:geometry(geoms[location](useless_gap))
 
+      
       if not client.focus.floating then
+
+         resize_region_to_index(is.region, is.region_geom, true)
+
          local tobe = {
             region=get_client_info(client.focus).active_region   
          }
@@ -559,14 +581,6 @@ end
 --]]
 
 ---------------------------------------------------------- my_shifter() -- ;
-
-local function reset_client_meta(c)
-   c.maximized = false
-   c.maximized_horizontal = false
-   c.maximized_vertical = false
-   c.direction = nil
-   return c
-end
 
 local function my_shifter(direction, swap)
    return function()
