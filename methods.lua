@@ -270,8 +270,8 @@ end
 ----------------------------------------------- get_clients_in_region() -- ;
 
 local function get_clients_in_region(region_ix, c, s)
-   local s = s or c.screen or awful.screen.focused()
    local c = c or client.focus or nil
+   local s = s or c.screen or awful.screen.focused()
    local source_client = c or client.focus or nil
    local source_screen = s or (source_client and source_client.screen)
    local active_region = region_ix or nil
@@ -297,9 +297,15 @@ local function get_clients_in_region(region_ix, c, s)
    if #region_clients == 0 then
       for i, w in ipairs(s.clients) do
          if not (w.floating) then
-            if (math.abs(regions[active_region].x - w.x) <= 5 and
-                math.abs(regions[active_region].y - w.y) <= 5) 
-               or w.region == region_ix
+            if (
+                  math.abs(regions[active_region].x - w.x) <= 5 and
+                  math.abs(regions[active_region].y - w.y) <= 5
+               )
+               or 
+               ( 
+                  regions[active_region].x ~= w.x and
+                  w.region == region_ix 
+               ) --|handle resizing left expanded regions
             then
                region_clients[#region_clients + 1] = w
                w.region = region_ix
@@ -800,10 +806,12 @@ end
 -- when using multipler monitors.
 
 function resize_region_to_client(c, reset)
+
+   local c = c or client.focus or nil
+
    if c.floating then return end
    --|we don't wan't interference
 
-   local c = c or client.focus
    local tablist = get_tiled_clients(c.region)
 
    for i, w in ipairs(tablist) do
