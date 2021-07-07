@@ -467,9 +467,17 @@ local function expand_vertical()
    local going = "down"
 
    if c.maximized_vertical then 
+      c.maximized_horizontal = false
       c.maximized_vertical = false
+
+      if not c.floating then
+         -- draw_tabbar(c.region)
+         resize_region_to_client(c, true)
+      end
+
       return
-   end --|reset toggle maximized state
+   end --|reset toggle when sending same shortcut
+       --|consequitively
 
    local stuff = get_client_info()
    local target = grect.get_in_direction("down", stuff.regions, client.focus:geometry())
@@ -511,6 +519,7 @@ local function expand_vertical()
 
    gears.timer.delayed_call(function () 
       client.focus:geometry(tobe)   
+      resize_region_to_client(c, {horizontal=false,vertical=true,direction=direction})
       client.focus:raise()
    end)
 
