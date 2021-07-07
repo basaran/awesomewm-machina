@@ -80,6 +80,48 @@ end
 
 --------------------------------------------------------- get_regions() -- ;
 
+local function get_region(region_ix, s)
+   local s = s or awful.screen.focused()
+   local focused_screen,
+         workarea,
+         selected_tag,
+         layout,
+         focused_client = screen_info(s)
+
+   local machi_fn = nil
+   local machi_data = nil
+   local machi_regions = nil
+
+   if layout.machi_get_regions then
+      machi_fn = layout.machi_get_regions
+      machi_data = machi_fn(workarea, selected_tag)
+      machi_regions = machi_data
+   end --|version 1
+
+   if layout.machi_get_instance_data then
+      machi_fn = layout.machi_get_instance_data
+      machi_geom = layout.machi_set_geometry
+      machi_data = {machi_fn(screen[focused_screen], selected_tag)}
+      machi_regions = machi_data[3]
+   
+      for i=#machi_regions,1,-1 do
+         if machi_regions[i].habitable == false  then
+            table.remove(machi_regions, i)
+         end
+      end --|remove unhabitable regions
+
+      table.sort(
+         machi_regions,
+         function (a1, a2)
+            return a1.id > a2.id
+         end
+      ) --|v2 returns unordered region list and needs sorting.
+   end --|version 2/NG
+
+   return machi_regions[region_ix]
+end
+
+
 local function get_regions(s)
    local s = s or awful.screen.focused()
    local focused_screen,
@@ -268,6 +310,28 @@ local function focus_by_direction(direction)
 end
 
 ----------------------------------------------- get_clients_in_region() -- ;
+
+local function get_punched_clients(region_ix, s)
+   local s = s or awful.screen.focused()
+   local active_region = region_ix or nil
+   local region = get_region(region_ix, s)
+   local region_clients = {}
+
+   if #region_clients == 0 then
+      for i, w in ipairs(s.clients) do
+         if not (w.floating) then
+            if (w.region == region_ix)
+            then
+               region_clients[#region_clients + 1] = w
+            end
+         end
+      end --|try to get clients based on simple coordinates
+   end
+
+   return region_clients
+end --|try to get clients in a region using three different
+    --|algorithms.
+
 
 local function get_clients_in_region(region_ix, c, s)
    local c = c or client.focus or nil
@@ -467,12 +531,10 @@ local function expand_vertical()
    local going = "down"
 
    if c.maximized_vertical then 
-      c.maximized_horizontal = false
-      c.maximized_vertical = false
-
+      
       if not c.floating then
          -- draw_tabbar(c.region)
-         resize_region_to_client(c, true)
+         resize_region_to_index(c.region, true, true)
       end
 
       return
@@ -518,9 +580,9 @@ local function expand_vertical()
    c.maximized_vertical = true
 
    gears.timer.delayed_call(function () 
+      client.focus:raise()
       client.focus:geometry(tobe)   
       resize_region_to_client(c, {horizontal=false,vertical=true,direction=direction})
-      client.focus:raise()
    end)
 
    return
@@ -533,7 +595,7 @@ local function shuffle(direction)
       if not client.focus then return end
       --▨ flow control
 
-      local tablist = get_tiled_clients(client.focus.region)
+      local tablist = get_piled_clients(client.focus.region)
       --|this is the ordered list
 
       if not #tablist then return end
@@ -736,6 +798,30 @@ end
 
 ----------------------------------------------------- get_tiled_clients -- ;
 
+function get_piled_clients(region_ix, s)
+   local s = s or client.focus.screen or awful.screen.focused()
+   local tablist = get_punched_clients(region_ix, s)
+   local all_clients = get_global_clients()
+   local tiled_clients = {}
+   local myorder = {}
+   local window_ix = {}
+
+   for i,t in ipairs(tablist) do
+      window_ix[t.window] = true
+   end
+
+   local po = 1
+   for i,c in pairs(all_clients) do
+      if not c.floating and window_ix[c.window] then
+            tiled_clients[po] = c
+         po = po + 1
+      end
+   end
+
+   return tiled_clients
+end --[23]
+
+
 function get_tiled_clients(region_ix, s)
    local s = s or client.focus.screen or awful.screen.focused()
    local tablist = get_clients_in_region(region_ix, c, s)
@@ -815,7 +901,6 @@ end
 -- when using multipler monitors.
 
 function resize_region_to_client(c, reset)
-
    local c = c or client.focus or nil
 
    if c.floating then return end
@@ -837,7 +922,16 @@ function resize_region_to_client(c, reset)
 end
 
 function resize_region_to_index(region_ix, geom, reset)
-   local tablist = get_tiled_clients(region_ix)
+   local tablist = get_punched_clients(region_ix)
+   local region_info = get_region(region_ix)
+
+   log(tablist)
+   -- c.maximized_horizontal = false
+   -- c.maximized_vertical = false
+
+   -- if (1 == 1 ) then return end
+
+
    for c_ix, c in ipairs(tablist) do
       if reset == true then 
          reset_client_meta(c) 
@@ -846,7 +940,7 @@ function resize_region_to_index(region_ix, geom, reset)
          c.maximized_vertical = reset.vertical
          c.direction = reset.direction
       end
-      c:geometry(geom)
+      c:geometry(region_info)
    end
 end
 

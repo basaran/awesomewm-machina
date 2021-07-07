@@ -45,7 +45,6 @@ local bindings = {
 
    awful.key({modkey, "Shift"}, "[", my_shifter("backward")),
    awful.key({modkey, "Shift"}, "]", my_shifter("forward")),
-
    --▨ move
 
    awful.key({modkey, "Control"}, "[", my_shifter("backward", "swap")),
@@ -76,6 +75,7 @@ local bindings = {
 
    awful.key({modkey}, "Insert", move_to("top-left")),
    awful.key({modkey}, "Delete", move_to("bottom-left")),
+   awful.key({modkey}, "u", expand_horizontal("center")),
    awful.key({modkey}, "Home", expand_horizontal("center")),
    awful.key({modkey}, "Page_Up", move_to("top-right")),
    awful.key({modkey}, "Page_Down", move_to("bottom-right")),
