@@ -15,6 +15,13 @@ geoms.p1080 = function ()
    }
 end
 
+geoms.p1280 = function ()
+   return {
+      width=awful.screen.focused().workarea.width * 0.75,
+      height=awful.screen.focused().workarea.height * 0.90
+   }
+end
+
 geoms.p720 = function ()
    return {
       width=awful.screen.focused().workarea.width * 0.40,
@@ -59,7 +66,7 @@ end
 
 
 geoms.clients = {}
-geoms.clients["Subl"] = geoms.p1080
+geoms.clients["Subl"] = geoms.p1280
 geoms.clients["Byobu"] = geoms.p720
 geoms.clients["Krom"] = geoms.crt43
 geoms.clients["Google-chrome"] = geoms.crt43

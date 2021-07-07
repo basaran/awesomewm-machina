@@ -831,6 +831,7 @@ function resize_region_to_client(c, reset)
          w.maximized_vertical = reset.vertical
          w.direction = reset.direction
       end
+
       w:geometry(c:geometry())
    end
 end
