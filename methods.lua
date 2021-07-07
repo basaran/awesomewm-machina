@@ -925,13 +925,6 @@ function resize_region_to_index(region_ix, geom, reset)
    local tablist = get_punched_clients(region_ix)
    local region_info = get_region(region_ix)
 
-   log(tablist)
-   -- c.maximized_horizontal = false
-   -- c.maximized_vertical = false
-
-   -- if (1 == 1 ) then return end
-
-
    for c_ix, c in ipairs(tablist) do
       if reset == true then 
          reset_client_meta(c) 
