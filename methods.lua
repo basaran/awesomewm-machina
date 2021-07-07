@@ -289,6 +289,7 @@ local function get_clients_in_region(region_ix, c, s)
    end --|if no region index was provided, find the 
        --|region of the focused_client.
 
+   
    if not active_region then
       return
    end
@@ -296,8 +297,9 @@ local function get_clients_in_region(region_ix, c, s)
    if #region_clients == 0 then
       for i, w in ipairs(s.clients) do
          if not (w.floating) then
-            if math.abs(regions[active_region].x - w.x) <= 5  and
-               math.abs(regions[active_region].y - w.y) <= 5
+            if (math.abs(regions[active_region].x - w.x) <= 5 and
+                math.abs(regions[active_region].y - w.y) <= 5) 
+               or w.region == region_ix
             then
                region_clients[#region_clients + 1] = w
                w.region = region_ix
@@ -308,34 +310,35 @@ local function get_clients_in_region(region_ix, c, s)
       end --|try to get clients based on simple coordinates
    end
 
-   if #region_clients == 0 then
-      for i, cc in pairs(s.clients) do
-         if cc.region == active_region 
-            and regions[active_region].x == cc.x 
-            and regions[active_region].y == cc.y 
-            then
-            region_clients[#region_clients + 1] = cc
-         end
-      end 
-   end --| this logic compares c.region to global client index.
-       --| if we somehow fail to update c.region somewhere
-       --| shuffle shortcuts won't work with this one.
+   -- if #region_clients == 0 then
+   --    for i, cc in pairs(s.clients) do
+   --       if cc.region == active_region 
+   --          and regions[active_region].x == cc.x 
+   --          and regions[active_region].y == cc.y 
+   --          then
+   --          region_clients[#region_clients + 1] = cc
+   --       end
+   --    end 
+   -- end --| this logic compares c.region to global client index.
+   --     --| if we somehow fail to update c.region somewhere
+   --     --| shuffle shortcuts won't work with this one.
 
-   if #region_clients == 0 then
-      for _, cc in ipairs(s.clients) do
-         if not (cc.floating) then
-            if regions[active_region].x <= cc.x + cc.width + cc.border_width * 2 
-               and cc.x <= (regions[active_region].x + regions[active_region].width) 
-               and regions[active_region].y <= (cc.y + cc.height + cc.border_width * 2)
-               and cc.y <= (regions[active_region].y + regions[active_region].height)
-            then
-               region_clients[#region_clients + 1] = cc
-            end
-         end
-      end 
-   end --|this logic works with coordinates more throughly but
-       --|it also causes issues with overflowing
-       --|(expanded) clients.
+
+   -- if #region_clients == 0 then
+   --    for _, cc in ipairs(s.clients) do
+   --       if not (cc.floating) then
+   --          if regions[active_region].x <= cc.x + cc.width + cc.border_width * 2 
+   --             and cc.x <= (regions[active_region].x + regions[active_region].width) 
+   --             and regions[active_region].y <= (cc.y + cc.height + cc.border_width * 2)
+   --             and cc.y <= (regions[active_region].y + regions[active_region].height)
+   --          then
+   --             region_clients[#region_clients + 1] = cc
+   --          end
+   --       end
+   --    end 
+   -- end --|this logic works with coordinates more throughly but
+   --     --|it also causes issues with overflowing
+   --     --|(expanded) clients.
 
    return region_clients
 end --|try to get clients in a region using three different
@@ -358,7 +361,7 @@ local function expand_horizontal(direction)
          c.maximized_vertical = false
 
          if not c.floating then
-            draw_tabbar(c.region)
+            -- draw_tabbar(c.region)
             resize_region_to_client(c, true)
          end
 
@@ -386,9 +389,7 @@ local function expand_horizontal(direction)
 
          gears.timer.delayed_call(function (c) 
             c:geometry(tobe)
-            draw_tabbar(c.region)
             resize_region_to_client(c, {horizontal=true,vertical=false,direction=direction})
-            -- clear_tabbar(c)
          end,c)
          return
       end
@@ -401,14 +402,13 @@ local function expand_horizontal(direction)
             height=c.height,
             y=c.y
          }
+
          c.direction = direction
          c.maximized_horizontal = true
          c.maximixed_vertical = false
 
          gears.timer.delayed_call(function (c) 
-            client.focus:geometry(tobe)
-            draw_tabbar(c.region)
-            clear_tabbar(c)
+            c:geometry(tobe)
             resize_region_to_client(c, {horizontal=true,vertical=false,direction=direction})
          end,c)
          return
@@ -515,13 +515,13 @@ end
 
 local function shuffle(direction)
    return function()
-      local tablist = get_tiled_clients()
+      if not client.focus then return end
+      --▨ flow control
+
+      local tablist = get_tiled_clients(client.focus.region)
       --|this is the ordered list
 
       if not #tablist then return end
-      --▨ flow control
-
-      if not client.focus then return end
       --▨ flow control
 
       focused_client_ix = get_client_ix(client.focus.window, tablist)
@@ -766,11 +766,16 @@ function draw_tabbar(region_ix, s)
       global_widget_table[cl.window] = {}
 
       for cc_ix, cc in ipairs(tablist) do
-         local buttons = gears.table.join(awful.button({}, 1, function(_) 
-            gears.timer.delayed_call(function(p) 
-               client.emit_signal("riseup", p)
-            end, cc)
-         end))
+         local buttons = gears.table.join(
+            awful.button({}, 1, function(_) 
+               gears.timer.delayed_call(function(p) 
+                  client.emit_signal("riseup", p)
+               end, cc)
+            end),
+            awful.button({}, 3, function(_)
+               cc:kill()
+            end))
+
          global_widget_table[cl.window][cc_ix] = tabs.create(cc, (cc == cl), buttons, cl_ix)
          flexlist:add(global_widget_table[cl.window][cc_ix])
          flexlist.max_widget_size = 120
@@ -800,6 +805,7 @@ function resize_region_to_client(c, reset)
 
    local c = c or client.focus
    local tablist = get_tiled_clients(c.region)
+
    for i, w in ipairs(tablist) do
       if reset == true then 
          reset_client_meta(w)
@@ -864,20 +870,24 @@ end
 ------------------------------------------------------ signal helpers -- ;
 
 local function manage_signal(c)
-   local ci = get_client_info(c)
-   --|client info
+   if c.data.awful_client_properties then
+      local ci = get_client_info(c)
+      --|client info
 
-   global_client_table[c.window] = c
-   --|add window.id to client index
+      global_client_table[c.window] = c
+      --|add window.id to client index
 
-   if ci.active_region and not c.floating then
-      gears.timer.delayed_call(function(region, screen, p)
-         p.region = region
-         draw_tabbar(region, screen)
-         c:geometry(ci.active_region_geom)
-      end, ci.active_region, c.screen, c)
-   end --|in case new client appears tiled
-       --|we must update the regions tabbars.
+      if ci.active_region and not c.floating then
+         gears.timer.delayed_call(function(cinfo, p)
+            if p.data.awful_client_properties then --[20]
+               p.region = cinfo.region
+               draw_tabbar(cinfo.active_region, p.screen)
+               p:geometry(cinfo.active_region_geom)
+            end
+         end, ci, c)
+      end --|in case new client appears tiled
+          --|we must update the regions tabbars.
+   end
 end --[6] 
 
 ----------------------------------------------------;
@@ -1071,5 +1081,10 @@ return module
   the order of our tablist intact, without this, tabbars
   would go out of order when user focuses via shortcuts
   (run_or_raise).
+
+  [20] cudatext had an awkward issue, I suppose it's the way
+  it's rendering its window causing it to register multiple
+  times and it would make client.lua throw an invalid
+  object error at line 1195. So, it's handled now.
 
 --]]

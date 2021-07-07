@@ -37,6 +37,8 @@ We now have tabs for tiled clients :)
 
 - [ ] Better keybindings (possibly emacs style)
 - [X] Clickable tabs
+- [ ] Override cyclefocus for tabbed regions or bind alt-tab?
+- [ ] Merge Backham and Mouser (focus should stay client under mouse - sometimes?)
 - [ ] Update tabs on tag change
 - [ ] Add binding for relocating the entire region
 - [ ] Deck spread (send focused client to a direction without moving focus)

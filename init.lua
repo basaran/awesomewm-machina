@@ -4,6 +4,7 @@
 local capi = {root=root}
 local awful = require("awful")
 local modkey = "Mod4"
+local altkey = "Mod1"
 
 local machina = require("machina.methods")
 local backham = require("machina.backham")
@@ -16,23 +17,42 @@ local expand_vertical = machina.expand_vertical
 local move_to = machina.move_to
 local toggle_always_on = machina.toggle_always_on
 local teleport_client = machina.teleport_client
+local get_client_info = machina.get_client_info
 
 ---------------------------------------------------------- key bindings -- ;
 
 local bindings = {
+   awful.key({altkey}, "Tab", shuffle("backward")),
+   awful.key({altkey, "Shift"}, "Tab", shuffle("forward")),
+   
    awful.key({modkey}, "[", shuffle("backward")),
    awful.key({modkey}, "]", shuffle("forward")),
+   
+   awful.key({modkey}, "x", function ()
+      c = client.focus or nil
+      if not c then return end
+      if c.floating then c.minimized = true return end
+      shuffle("backward")(c)
+   end),
+
+   awful.key({modkey, "Shift"}, "x", function ()
+      c = client.focus or nil
+      if not c then return end
+      if c.floating then c.minimized = true return end
+      shuffle("forward")(c)
+   end),
    --▨ shuffle
 
    awful.key({modkey, "Shift"}, "[", my_shifter("backward")),
    awful.key({modkey, "Shift"}, "]", my_shifter("forward")),
+
    --▨ move
 
    awful.key({modkey, "Control"}, "[", my_shifter("backward", "swap")),
    awful.key({modkey, "Control"}, "]", my_shifter("forward", "swap")),
    --▨ swap
 
-   awful.key({modkey}, ";", shuffle("backward")),
+   awful.key({modkey}, ";", function() log(get_client_info(client.focus).active_region) end ),
    awful.key({modkey}, "'", shuffle("forward")),
    --▨ shuffle
 
