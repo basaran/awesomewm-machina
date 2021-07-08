@@ -1230,6 +1230,9 @@ return module
 
 --[[ ------------------------------------------------- NOTES ]
 
+  [99] order of signals, manage_signal executes the last,
+  not the first.
+
   [0] todo: rewrite the whole thing, but plan ahead this
   time.
 

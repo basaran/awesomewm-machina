@@ -35,14 +35,16 @@ We now have tabs for tiled clients :)
 
 ### Next?
 
-- [ ] Better keybindings (possibly emacs style)
+- [ ] Better keybindings (possibly emacs style, or vim style): an xcape key can be used to to initiate awm layer and enter can exit from it.
 - [X] Clickable tabs
+- [ ] Add align to left or right for floating windows: this will allow the user to see either side of the layout
 - [X] Override cyclefocus for tabbed regions or bind alt-tab?
 - [ ] Merge Backham and Mouser (focus should stay client under mouse - sometimes?)
 - [ ] Update tabs on tag change
 - [ ] Add binding for relocating the entire region
 - [ ] Deck spread (send focused client to a direction without moving focus)
-- [ ] Visual teleport (overlay with region numbers to choose from)
+- [ ] Client pull (pull a client from a direction onto the current deck)
+- [ ] Visual teleport (overlay with region numbers to choose from, possibly on all monitors, kind of like vimium)
 - [x] Avoid machi's auto expansion on config reload
 - [x] Show tabs everywhere
 - [x] Dual monitor support
