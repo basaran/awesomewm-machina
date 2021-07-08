@@ -449,7 +449,7 @@ local function expand_horizontal(direction)
 
          if not c.floating then
             -- draw_tabbar(c.region)
-            resize_region_to_client(c, true)
+            resize_region_to_index(c.region, true, true)
          end
 
          return
