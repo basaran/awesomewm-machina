@@ -34,7 +34,12 @@ local function reset_client_meta(c)
    return c
 end
 
-
+local function reset_all_clients(s)
+   local s = s or awful.screen.focused()
+   for i,c in pairs(s.clients) do
+      reset_client_meta(c)
+   end
+end
 ------------------------------------------------------------- go_edge() -- ;
 
 local function go_edge(direction, regions, current_box)
@@ -276,23 +281,36 @@ local function move_to(location)
       end
       
       useless_gap = getlowest(edges.x)
-      client.focus:geometry(geoms[location](useless_gap))
 
-      
+      if client.focus.floating then
+         client.focus:geometry(geoms[location](useless_gap))
+      end
+
       if not client.focus.floating then
+
+         -- todo: set actual destination region geometry
+         -- this is not okay and buggy
+         -- or at least set it up to use directional shifting
+         -- to match left, right, center
+
+         local tobe_geom = geoms[location](useless_gap)
+         tobe_geom.width = 300
+         tobe_geom.height = 600
+
+         local tobe = {
+            region=get_client_info(client.focus).active_region,
+         }
+
+         client.focus:geometry(tobe_geom)
 
          resize_region_to_index(is.region, is.region_geom, true)
 
-         local tobe = {
-            region=get_client_info(client.focus).active_region   
-         }
          draw_tabbar(is.region)
 
          gears.timer.delayed_call(function ()
             client.focus.region = tobe.region
             draw_tabbar(tobe.region)
          end)
-         
       end --| redraw tabs and update meta
 
       return
@@ -319,9 +337,8 @@ local function get_punched_clients(region_ix, s)
 
    if #region_clients == 0 then
       for i, w in ipairs(s.clients) do
-         if not (w.floating) then
-            if (w.region == region_ix)
-            then
+         if not w.floating then
+            if w.region == region_ix then
                region_clients[#region_clients + 1] = w
             end
          end
@@ -365,11 +382,11 @@ local function get_clients_in_region(region_ix, c, s)
                   math.abs(regions[active_region].x - w.x) <= 5 and
                   math.abs(regions[active_region].y - w.y) <= 5
                )
-               or 
-               ( 
-                  regions[active_region].x ~= w.x and
-                  w.region == region_ix 
-               ) --|handle resizing left expanded regions
+               -- or 
+               -- ( 
+               --    regions[active_region].x ~= w.x and
+               --    w.region == region_ix 
+               -- ) --|handle resizing left expanded regions
             then
                region_clients[#region_clients + 1] = w
                w.region = region_ix
@@ -660,6 +677,63 @@ end
 
 ---------------------------------------------------------- my_shifter() -- ;
 
+local function focus_by_number(region_ix,s)
+   return function()
+      local s = s or awful.screen.focused()
+      local regions = get_regions(s)
+
+      local target_region_ix
+      local target_region
+
+      local swapee = get_swapee(region_ix)
+      --|visible client at the target region
+
+      swapee:emit_signal("request::activate", "mouse_enter",{raise = true})
+   end   
+end
+
+local function focus_by_index(direction)
+   return function()
+
+      if direction == "left" then direction = "backward" end
+      if direction == "right" then direction = "forward" end
+
+      local c = client.focus
+      local stuff = get_client_info()
+      local client_region_ix = stuff.active_region
+      local source_region
+      local target_region_ix
+      local target_region
+
+      c = reset_client_meta(c)
+      --|clean artifacts in case client was expanded.
+   
+      if direction == "backward" then
+         if (client_region_ix + 1) > #stuff.regions then 
+            target_region_ix = 1
+         else
+            target_region_ix = client_region_ix+1
+         end
+      end --|go next region by index, 
+          --|if not reset to first
+
+      if direction == "forward" then
+         if (client_region_ix - 1) < 1 then 
+            target_region_ix = #stuff.regions
+         else
+            target_region_ix = client_region_ix - 1
+         end
+      end --|go previous region by index,
+          --|if not reset to last
+     
+      local swapee = get_swapee(target_region_ix)
+      --|visible client at the target region
+
+      swapee:emit_signal("request::activate", "mouse_enter",{raise = true})
+   end   
+end
+
+
 local function my_shifter(direction, swap)
    return function()
 
@@ -851,7 +925,7 @@ function draw_tabbar(region_ix, s)
    local s = s or awful.screen.focused()
    local flexlist = tabs.layout()
    local tablist = get_tiled_clients(region_ix, s)
-
+   
    if tablelength(tablist) == 0 then
       return
    end --|this should only fire on an empty region
@@ -975,6 +1049,10 @@ end
 ------------------------------------------------------ signal helpers -- ;
 
 local function manage_signal(c)
+   reset_all_clients(s)
+   --|reset hack, we shouldn't need this in the second write
+   --|up.
+
    if c.data.awful_client_properties then
       local ci = get_client_info(c)
       --|client info
@@ -1100,11 +1178,16 @@ end -- todo: need to update the other clients in the region here as well
     -- tabs a lot making it harder to distinguish what is what.
     -- client.connect_signal("property::name", name_signal)
 
+----------------------------------------------------;
 
 local function riseup_signal(c)
    client.focus = c; c:raise()
    -- c:emit_signal("request::activate", "mouse_enter",{raise = true})
 end
+
+----------------------------------------------------;
+
+
 
 
 --------------------------------------------------------------- signals -- ;
@@ -1138,12 +1221,64 @@ module = {
    update_global_clients = update_global_clients,
    get_client_info = get_client_info,
    teleport_client = teleport_client,
+   focus_by_index = focus_by_index,
+   focus_by_number = focus_by_number
 }
 
 return module
 
 
 --[[ ------------------------------------------------- NOTES ]
+
+  [0] todo: rewrite the whole thing, but plan ahead this
+  time.
+
+      - get regions from machi, this will give us indexes
+      - manage signal will mark the global index and punch
+        the region_id to the client.
+      - it will then draw tabs to the region
+
+  region_expansions:
+
+      - regions can be expanded using the maximixed trick.
+      - it will change the geometry of all the clients in
+        that region.
+      - redrawing the tabbar is not necessary.
+      - when toggling, region geometry will also change.
+
+
+  functions needed:
+   
+      - get_region(region_id, screen)
+      
+      - get_regions(screen)
+
+      - get_clients_in_region(region_id, screen): this would
+        need to return the ordered list of all the clients
+        in the region from the global client list.
+
+        there are multiple strategies that can be used:
+        
+        c.region_id:
+        this wil flap during reload
+
+        geometric comparison: we can compare all client
+        geometry to regions geometry. but it will fail for
+        expanded/overflowing clients.
+
+      - draw_tabbar(region, screen): it will draw tabbars
+        for all the clients in the region.
+
+      - expand_region(direction, region, screen): it will
+        expand all the clients in the region. same shortcut
+        will reset the expansions. expansions will happen
+        in multiple directions, and "center".
+
+  MPV: it appears client flashing could also be an issue.
+  MPV for instance starts large briefly and causes an
+  update in the wrong region. We need a region.id lookup
+  only it seems. We should also consider reading awm rules
+  for a region id for placement.
 
   [4] machi's own region expansion has issues on
   awesome-reload. if we were to expand a region, and then

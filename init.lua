@@ -18,15 +18,27 @@ local move_to = machina.move_to
 local toggle_always_on = machina.toggle_always_on
 local teleport_client = machina.teleport_client
 local get_client_info = machina.get_client_info
+local focus_by_index = machina.focus_by_index
+local focus_by_number = machina.focus_by_number
 
 ---------------------------------------------------------- key bindings -- ;
 
 local bindings = {
-   awful.key({altkey}, "Tab", shuffle("backward")),
+   awful.key({altkey},"Tab", shuffle("backward")),
    awful.key({altkey, "Shift"}, "Tab", shuffle("forward")),
+
+   -- awful.key({modkey}, "#10", focus_by_number(1)),
+   -- awful.key({modkey}, "#11", focus_by_number(2)),
+   -- awful.key({modkey}, "#12", focus_by_number(3)),
+   -- awful.key({modkey}, "#13", focus_by_number(4)),
+   -- awful.key({modkey}, "#14", focus_by_number(5)),
    
    awful.key({modkey}, "[", shuffle("backward")),
    awful.key({modkey}, "]", shuffle("forward")),
+   --▨ move
+
+   -- awful.key({modkey}, "Tab", focus_by_index("backward")),
+   -- awful.key({modkey, "Shift"}, "Tab", focus_by_index("forward")),
    
    awful.key({modkey}, "x", function ()
       c = client.focus or nil
