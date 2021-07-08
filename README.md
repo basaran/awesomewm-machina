@@ -45,6 +45,8 @@ We now have tabs for tiled clients :)
 - [ ] Deck spread (send focused client to a direction without moving focus)
 - [ ] Client pull (pull a client from a direction onto the current deck)
 - [ ] Visual teleport (overlay with region numbers to choose from, possibly on all monitors, kind of like vimium)
+- [x] Allow expanding regions horizontally and vertically
+- [x] Auto resize all clients in the region when expanded
 - [x] Avoid machi's auto expansion on config reload
 - [x] Show tabs everywhere
 - [x] Dual monitor support
