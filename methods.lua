@@ -18,6 +18,21 @@ local clear_tabbar = helpers.clear_tabbar
 local global_client_table = {}
 local global_widget_table = {}
 
+function double_click_event_handler(double_click_event)
+    if double_click_timer then
+        double_click_timer:stop()
+        double_click_timer = nil
+        double_click_event()
+        return
+    end
+    beautiful.layout_machi = machi.get_icon()
+    double_click_timer = gears.timer.start_new(0.20, function()
+        double_click_timer = nil
+        return false
+    end)
+end
+
+
 function get_global_clients()
    return global_client_table
 end
@@ -1055,6 +1070,11 @@ function draw_tabbar(region_ix, s)
       for cc_ix, cc in ipairs(tablist) do
          local buttons = gears.table.join(
             awful.button({}, 1, function(_) 
+
+                double_click_event_handler(function()
+                    cc.floating = not cc.floating
+                end)
+
                gears.timer.delayed_call(function(p) 
                   client.emit_signal("riseup", p)
                end, cc)

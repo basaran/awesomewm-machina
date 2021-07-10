@@ -44,7 +44,7 @@ local bindings = {
 
    awful.key({modkey}, ";", align_floats("right")),
    awful.key({modkey, "Shift"}, ";", align_floats("left")),
-   --▨ floating alignment
+   --▨ alignment
    
    awful.key({modkey}, "x", function ()
       c = client.focus or nil
