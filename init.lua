@@ -20,6 +20,8 @@ local teleport_client = machina.teleport_client
 local get_client_info = machina.get_client_info
 local focus_by_index = machina.focus_by_index
 local focus_by_number = machina.focus_by_number
+local set_region = machina.set_region
+local align_floats = machina.align_floats
 
 ---------------------------------------------------------- key bindings -- ;
 
@@ -39,6 +41,10 @@ local bindings = {
 
    -- awful.key({modkey}, "Tab", focus_by_index("backward")),
    -- awful.key({modkey, "Shift"}, "Tab", focus_by_index("forward")),
+
+   awful.key({modkey}, ";", align_floats("right")),
+   awful.key({modkey, "Shift"}, ";", align_floats("left")),
+   --▨ floating alignment
    
    awful.key({modkey}, "x", function ()
       c = client.focus or nil
@@ -63,7 +69,6 @@ local bindings = {
    awful.key({modkey, "Control"}, "]", my_shifter("forward", "swap")),
    --▨ swap
 
-   awful.key({modkey}, ";", function() log(get_client_info(client.focus).active_region) end ),
    awful.key({modkey}, "'", shuffle("forward")),
    --▨ shuffle
 

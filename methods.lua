@@ -26,6 +26,8 @@ function update_global_clients(c)
    global_client_table[c.window] = c
 end
 
+----------------------------------------------------- reset_client_meta -- ;
+
 local function reset_client_meta(c)
    c.maximized = false
    c.maximized_horizontal = false
@@ -34,12 +36,122 @@ local function reset_client_meta(c)
    return c
 end
 
+--------------------------------------------------- reset_all_clients() -- ;
+
 local function reset_all_clients(s)
    local s = s or awful.screen.focused()
    for i,c in pairs(s.clients) do
       reset_client_meta(c)
    end
 end
+
+---------------------------------------------------------- set_region() -- ;
+
+local function set_region(region, c)
+   local c = c or client.focus or nil
+   if c then 
+      c.region = region end
+end
+
+------------------------------------------ get_visible_floating_clients -- ;
+
+local function get_visible_floating_clients(s)
+   local s = s or awful.screen.focused(s)
+   local les_visibles = {}
+
+   for i,p in pairs(s.all_clients) do
+      if p.floating and (p.always_on or p.bypass) and p:isvisible() then
+         les_visibles[#les_visibles+1] = p
+      end
+   end
+
+   return les_visibles
+end
+
+---------------------------------------------------- get_space_around() -- ;
+
+local function get_space_around(c)
+   if not c then return nil end
+
+   local c = c or nil
+   local s = awful.screen.focused()
+
+   local space_around = {
+      left=c.x,
+      right=s.workarea.width - (c.x + c.width),
+      top=s.workarea.height - (c.y),
+      bottom=s.workarea.height - (c.y + c.height),
+   }
+
+   return space_around
+end
+
+-------------------------------------------------------- align_floats() -- ;
+
+local function align_floats(direction)
+   return function (c)
+      local s = s or awful.screen.focused()
+      local c = client.focus or nil
+      local direction = direction or "right"
+
+      local space_around = get_space_around(c)
+      local cs = get_visible_floating_clients(s)
+
+      if space_around.right < 300 and space_around.left < 300 then
+         return
+      end
+
+      for i,p in pairs(cs) do
+         if p.window == c.window then goto next end
+         --|if c itself if it is actually floating
+          
+         if space_around.right < 300 and direction == "right" then 
+            direction = "left"
+         end
+
+         if space_around.left < 300 and direction == "left" then 
+            direction = "right"
+         end --|flow control, nothing to do
+
+         if direction == "right" then
+            if (p.width) > space_around.right then
+               p.width = space_around.right
+            end
+            --|resize if necessary
+            
+            p:geometry({x=c.x+c.width, y=c.y})
+            --|place x on the right
+         end
+
+         if direction == "left" then
+            if p.width > space_around.left then
+               p.width = space_around.left
+            end
+            --|resize if necessary
+
+            p:geometry({x=space_around.left - p.width, y=c.y})
+            --|place x on the left
+         end
+
+         if direction == "left" then direction = "right" end
+         if direction == "right" then direction = "left" end
+
+         p:emit_signal("request::activate")
+         --|bring float up
+
+         awful.placement.no_offscreen(p)
+         --|ensure everything is visible
+
+         ::next::
+      end
+      
+      client.focus = c
+      --|keep focus at the originating client
+   end
+end
+--|this will spread out visible floating to the left or
+--|right, can refactor most of this later.
+
 ------------------------------------------------------------- go_edge() -- ;
 
 local function go_edge(direction, regions, current_box)
@@ -518,7 +630,7 @@ local function expand_horizontal(direction)
             geom = geoms.p1080()
          end
 
-         if fixedchoice then
+         if fixedchoice and not c.floating then
             c.direction = "center"
             c.maximized_horizontal = true
             geom = fixedchoice()
@@ -1108,13 +1220,18 @@ end --[8]
 ----------------------------------------------------;
 
 local function floating_signal(c)
+   if not global_client_table[c.window] then return end
+   --|possibly to optimize config reload
+   --|floating signal kicks in before manage
+   --|this should bypass weird things happening during reload if any.
+
    if c.floating then
       if c.region then
-         gears.timer.delayed_call(function(active_region)
+         gears.timer.delayed_call(function(active_region,c)
             clear_tabbar(c)
             draw_tabbar(c.region)
             c.region = nil
-         end, active_region)
+         end, active_region,c)
       end
    end --|window became floating
 
@@ -1222,7 +1339,9 @@ module = {
    get_client_info = get_client_info,
    teleport_client = teleport_client,
    focus_by_index = focus_by_index,
-   focus_by_number = focus_by_number
+   focus_by_number = focus_by_number,
+   set_region = set_region,
+   align_floats = align_floats,
 }
 
 return module
