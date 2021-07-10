@@ -50,6 +50,7 @@ We now have tabs for tiled clients :)
 - [ ] Client pull (pull a client from a direction onto the current deck)
 - [ ] Visual teleport (overlay with region numbers to choose from, possibly on all monitors, kind of like vimium)
 - [ ] Add tabbing for floating clients: drag and drop seems not so easy, using rofi could be fine too but it is another step. Focus and mark could work better. Execute the shourtcut and choose the window to be tabbed with mouse or possibly via keyboard.
+- [x] Permanently mark floating windows to remain (rules: always_on, bypass)
 - [x] Allow expanding regions horizontally and vertically
 - [x] Auto resize all clients in the region when expanded
 - [x] Avoid machi's auto expansion on config reload
