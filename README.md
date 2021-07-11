@@ -128,6 +128,12 @@ Some of the default shortcuts are:
 ### Preview
 https://user-images.githubusercontent.com/30809170/123538385-ab5f7b80-d702-11eb-9a14-e8b9045d9d27.mp4
 
+### Tabs
+https://user-images.githubusercontent.com/30809170/125209584-c6d09780-e267-11eb-8b6a-adc14126d8f9.mp4
+
+### Expansions
+https://user-images.githubusercontent.com/30809170/125209587-d059ff80-e267-11eb-9a03-5b02cae63ccb.mp4
+
 
 
 
