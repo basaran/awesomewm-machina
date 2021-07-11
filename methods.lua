@@ -1,7 +1,12 @@
 
 --------------------------------------------------------- dependencies  -- ;
 
-local grect = require("gears.geometry").rectangle
+local naughty = require('naughty')
+local gears = require("gears")
+local awful = require("awful")
+local beautiful = require('beautiful')
+local grect = gears.geometry.rectangle
+
 local tabs = require("machina.tabs")
 local geoms = require("machina.geoms")
 local helpers = require("machina.helpers")
@@ -70,6 +75,20 @@ end
 
 ------------------------------------------ get_visible_floating_clients -- ;
 
+local function get_all_floating_clients(s)
+   local s = s or awful.screen.focused(s)
+   local les_visibles = {}
+
+   for i,p in pairs(s.all_clients) do
+      if p.floating then
+         les_visibles[#les_visibles+1] = p
+      end
+   end
+
+   return les_visibles
+end
+
+
 local function get_visible_floating_clients(s)
    local s = s or awful.screen.focused(s)
    local les_visibles = {}
@@ -110,11 +129,16 @@ local function align_floats(direction)
       local direction = direction or "right"
 
       local space_around = get_space_around(c)
-      local cs = get_visible_floating_clients(s)
+      local cs = get_all_floating_clients(s)
 
-      if space_around.right < 300 and space_around.left < 300 then
+      if not c then return end
+      --|flow control
+
+      if space_around.right < 300 
+         and space_around.left < 300 then
          return
-      end
+      end --|flow control
+
 
       for i,p in pairs(cs) do
          if p.window == c.window then goto next end
@@ -151,8 +175,11 @@ local function align_floats(direction)
          if direction == "left" then direction = "right" end
          if direction == "right" then direction = "left" end
 
-         p:emit_signal("request::activate")
+         p.hidden = false
+         p:raise()
+         -- p:emit_signal("request::activate")
          --|bring float up
+
 
          awful.placement.no_offscreen(p)
          --|ensure everything is visible
@@ -164,8 +191,12 @@ local function align_floats(direction)
       --|keep focus at the originating client
    end
 end
---|this will spread out visible floating to the left or
---|right, can refactor most of this later.
+--|this will spread out floating clients to the left or
+--|right of the focused client, can refactor most of this later.
+--|perhaps it is better to limit this to visible floats only.
+--|perhaps it would be better to keep the position and geometry
+--|of the floats prior to aligning them, so that they can appear
+--|where they used to be later.
 
 ------------------------------------------------------------- go_edge() -- ;
 
@@ -210,7 +241,8 @@ local function screen_info(s)
       focused_client
 end
 
---------------------------------------------------------- get_regions() -- ;
+
+---------------------------------------------------------- get_region() -- ;
 
 local function get_region(region_ix, s)
    local s = s or awful.screen.focused()
@@ -253,6 +285,7 @@ local function get_region(region_ix, s)
    return machi_regions[region_ix]
 end
 
+--------------------------------------------------------- get_regions() -- ;
 
 local function get_regions(s)
    local s = s or awful.screen.focused()
@@ -575,13 +608,18 @@ local function expand_horizontal(direction)
          c.maximized_vertical = false
 
          if not c.floating then
-            -- draw_tabbar(c.region)
+            draw_tabbar(c.region)
             resize_region_to_index(c.region, true, true)
+
+            gears.timer.weak_start_new(0.1,function ()
+               client.focus = mouse.current_client
+            end) --|when toggling leave the focus
+                 --|to the client under the pointer
          end
 
          return
-      end --|reset toggle when sending same shortcut
-          --|consequitively
+      end --|reset toggle when sending the same
+          --|shortcut consequitively.
 
       local stuff = get_client_info()
       local target = grect.get_in_direction(direction, stuff.regions, client.focus:geometry())
@@ -601,7 +639,7 @@ local function expand_horizontal(direction)
          c.maximized_horizontal = true
          c.maximixed_vertical = false
 
-         gears.timer.delayed_call(function (c) 
+         gears.timer.delayed_call(function (c)
             c:geometry(tobe)
             resize_region_to_client(c, {horizontal=true,vertical=false,direction=direction})
          end,c)
@@ -654,7 +692,13 @@ local function expand_horizontal(direction)
          c:geometry(geom)
          awful.placement.centered(c)
 
+         client.focus = nil
+         --|allow micky to move the mouse
+
          gears.timer.delayed_call(function (c)
+            client.focus = c
+            --|allow micky to move the mouse
+            
             c:raise()
             client.emit_signal("tabbar_draw", c.region)
             clear_tabbar(c)
@@ -1324,8 +1368,9 @@ end
 
 ----------------------------------------------------;
 
-
-
+-- awful.titlebar.widget.connect_signal("mouse::enter", function()
+--    log('here')
+-- end)
 
 --------------------------------------------------------------- signals -- ;
 
@@ -1338,6 +1383,10 @@ client.connect_signal("tabbar_draw", draw_tabbar)
 client.connect_signal("unmanage", unmanage_signal) 
 client.connect_signal("manage", manage_signal)
 tag.connect_signal("property::selected", selected_tag_signal)
+
+-- client.connect_signal("mouse::enter", function ()
+-- log(mouse.current_widget)
+-- end)
 
 --------------------------------------------------------------- exports -- ;
 

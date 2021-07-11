@@ -2,7 +2,10 @@
 ---------------------------------------------------------- dependencies -- ;
 
 local capi = {root=root}
+local naughty = require('naughty')
+local gears = require("gears")
 local awful = require("awful")
+local beautiful = require('beautiful')
 local modkey = "Mod4"
 local altkey = "Mod1"
 

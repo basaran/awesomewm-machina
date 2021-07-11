@@ -1,9 +1,9 @@
 
 --------------------------------------------- widget.tabbar.default.lua -- ;
 
+local awful = require("awful")
 local gears = require("gears")
 local wibox = require("wibox")
-
 local beautiful = require("beautiful")
 
 local bg_normal = beautiful.tabbar_bg_normal or beautiful.bg_normal or "#1a1a1a"
@@ -16,7 +16,6 @@ local fg_focus  = beautiful.tabbar_fg_focus  or beautiful.fg_focus  or "#ffffff"
 local font      = beautiful.tabbar_font      or beautiful.font      or "Recursive Sans Casual Static 8"
 local size      = beautiful.tabbar_size or 14
 local position = beautiful.tabbar_position or "bottom"
-
 
 local function create(c, focused_bool, buttons, idx)
     local flexlist = wibox.layout.flex.horizontal
