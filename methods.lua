@@ -608,8 +608,8 @@ local function expand_horizontal(direction)
          c.maximized_vertical = false
 
          if not c.floating then
-            draw_tabbar(c.region)
             resize_region_to_index(c.region, true, true)
+            draw_tabbar(c.region)
 
             gears.timer.weak_start_new(0.1,function ()
                client_under_mouse = mouse.current_client
