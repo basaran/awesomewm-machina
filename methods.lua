@@ -612,7 +612,11 @@ local function expand_horizontal(direction)
             resize_region_to_index(c.region, true, true)
 
             gears.timer.weak_start_new(0.1,function ()
-               client.focus = mouse.current_client
+               client_under_mouse = mouse.current_client
+
+               if client_under_mouse then
+                  client.focus = mouse.current_client   
+               end
             end) --|when toggling leave the focus
                  --|to the client under the pointer
          end
