@@ -1,3 +1,7 @@
+local naughty = require('naughty')
+local gears = require("gears")
+local awful = require("awful")
+local beautiful = require('beautiful')
 
 local function old_shuffle(direction)
    return function()

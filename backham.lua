@@ -2,6 +2,7 @@
 --+ allows automatically focusing back to the previous client
 --> on window close (unmanage) or minimize.
 
+local awful = require("awful")
 local get_client_info = require("machina.methods").get_client_info
 
 -------------------------------------------------------------------> methods ;
