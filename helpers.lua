@@ -33,7 +33,6 @@ end --|
     --|global_client_index. keeping it here for historical
     --|reasons in case we need this again.
 
-
 local function clear_tabbar(c, position)
    if not c then return end
    local position = position or "bottom"
@@ -42,7 +41,6 @@ local function clear_tabbar(c, position)
       layout=wibox.layout.flex.horizontal, nil
    }
 end --|clears bottom tabbar
-
 
 local function reload(m)
   if package.loaded[m] then
@@ -61,7 +59,6 @@ local function reload(m)
   return temp_module
 end
 
-
 local function getlowest(table)
    local low = math.huge
    local index
@@ -73,7 +70,6 @@ local function getlowest(table)
    end
    return index
 end
-
 
 local function compare(a,b)
    return a.v < b.v

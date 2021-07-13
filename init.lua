@@ -126,6 +126,15 @@ local bindings = {
 
 --------------------------------------------------------------- signals -- ;
 
+tag.connect_signal("property::selected", function(t)
+   if client.focus == nil then
+      local s = awful.screen.focused()
+      client.focus = awful.client.focus.history.get(s, 0)
+   end
+end) --|ensure there is always a selected client during tag
+     --|switching or logins
+
+
 client.connect_signal("manage", function(c)
    c.maximized = false
    c.maximized_horizontal = false

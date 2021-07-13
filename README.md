@@ -36,6 +36,7 @@ We now have tabs for tiled clients :)
 ### Next?
 
 - [ ] Better keybindings (possibly emacs style, or vim style): an xcape key can be used to to initiate awm layer and enter can exit from it.
+- [X] Tags must always have a focused window. Added tag.selected signal.
 - [X] Clickable tabs
 - [X] Close tabs. (right click)
 - [X] Allow detaching from floating tabs. (double click)

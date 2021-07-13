@@ -72,6 +72,7 @@ end
 
 geoms.clients = {}
 geoms.clients["Subl"] = geoms.p1280
+geoms.clients["Cudatext"] = geoms.crt43
 geoms.clients["Byobu"] = geoms.p720
 geoms.clients["Krom"] = geoms.crt43
 geoms.clients["Google-chrome"] = geoms.crt43
