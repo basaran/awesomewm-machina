@@ -13,6 +13,14 @@ geoms.crt43 = function ()
 end --|awful.screen.focused().workarea.y is required for
     --|multiple monitors to relocate properly.
 
+geoms.narrow = function ()
+   return {
+      width=900,
+      height=1200,
+   }
+end --|awful.screen.focused().workarea.y is required for
+    --|multiple monitors to relocate properly.
+
 geoms.p1080 = function ()
    return {
       width=awful.screen.focused().workarea.width * 0.65,
@@ -74,7 +82,8 @@ geoms.clients = {}
 geoms.clients["Subl"] = geoms.p1280
 geoms.clients["Cudatext"] = geoms.crt43
 geoms.clients["Byobu"] = geoms.p720
-geoms.clients["Krom"] = geoms.crt43
+geoms.clients["Krom"] = geoms.narrow
+geoms.clients["Emacs"] = geoms.crt43
 geoms.clients["Google-chrome"] = geoms.crt43
    
 

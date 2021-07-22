@@ -73,7 +73,7 @@ local bindings = {
    --▨ swap
 
    awful.key({modkey}, "'", function ()
-   naughty.notify({text=inspect(client.focus.transient_for.screen)})
+   naughty.notify({text=inspect(client.focus.transient_for)})
    end),
    --▨ shuffle
 

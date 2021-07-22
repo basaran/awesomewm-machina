@@ -1229,7 +1229,7 @@ end
 ------------------------------------------------------ signal helpers -- ;
 
 local function manage_signal(c)
-   reset_all_clients(s)
+   -- reset_all_clients(s)
    --|reset hack, we shouldn't need this in the second write
    --|up.
 
