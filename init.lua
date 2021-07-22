@@ -72,7 +72,9 @@ local bindings = {
    awful.key({modkey, "Control"}, "]", my_shifter("forward", "swap")),
    --▨ swap
 
-   awful.key({modkey}, "'", shuffle("forward")),
+   awful.key({modkey}, "'", function ()
+   naughty.notify({text=inspect(client.focus.transient_for.screen)})
+   end),
    --▨ shuffle
 
    awful.key({modkey}, "j", focus_by_direction("left")),
@@ -147,6 +149,7 @@ end) --|during reload maximized clients get messed up, as machi
 
 client.connect_signal("request::activate", function(c) 
    c.hidden = false
+   -- c.minimized = false
    c:raise()
    client.focus = c
 end) --|this is needed to ensure floating stuff becomes
@@ -172,7 +175,7 @@ if not (c.bypass or c.always_on) then
       return
    end
 end
-end) 
+end)
 --[[+]
    hide all floating windows when the user switches to a tiled
    client. This is handy when you have a floating browser

@@ -1250,6 +1250,14 @@ local function manage_signal(c)
          end, ci, c)
       end --|in case new client appears tiled
           --|we must update the regions tabbars.
+
+      if c.transient_for then
+         c:move_to_screen(c.transient_for.screen)
+         c:move_to_tag(awful.screen.focused().selected_tag)
+         client.focus = c
+      end --|when clients have a preset screen index with the rules,
+          --|transient windows always open in that screen even if we
+          --|moved it to the other one. this takes care of that.
    end
 end --[6] 
 
